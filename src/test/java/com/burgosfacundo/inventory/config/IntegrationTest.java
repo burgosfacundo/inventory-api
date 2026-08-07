@@ -1,4 +1,4 @@
-package com.burgosfacundo.inventory_api.config;
+package com.burgosfacundo.inventory.config;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.junit.jupiter.Container;

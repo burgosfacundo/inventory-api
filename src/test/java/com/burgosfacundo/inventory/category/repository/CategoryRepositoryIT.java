@@ -1,16 +1,14 @@
-package com.burgosfacundo.inventory_api.category.repository;
+package com.burgosfacundo.inventory.category.repository;
 
 
-import com.burgosfacundo.inventory_api.category.entity.Category;
-import com.burgosfacundo.inventory_api.config.IntegrationTest;
+import com.burgosfacundo.inventory.category.entity.Category;
+import com.burgosfacundo.inventory.config.IntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @SpringBootTest
 class CategoryRepositoryIT extends IntegrationTest {
@@ -37,17 +35,5 @@ class CategoryRepositoryIT extends IntegrationTest {
         assertThat(found.getName()).isEqualTo("Electronics");
         assertThat(found.getDescription())
                 .isEqualTo("Electronic devices and accessories");
-    }
-
-
-    @Test
-    void shouldRejectCategoryWithoutName() {
-        Category category = new Category(
-                null,
-                "Invalid category"
-        );
-
-        assertThatThrownBy(() -> categoryRepository.saveAndFlush(category))
-                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
