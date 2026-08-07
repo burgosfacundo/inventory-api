@@ -2,7 +2,7 @@ package com.burgosfacundo.inventory.category.mapper;
 
 import com.burgosfacundo.inventory.category.dto.CategoryRequest;
 import com.burgosfacundo.inventory.category.dto.CategoryResponse;
-import com.burgosfacundo.inventory.category.entity.Category;
+import com.burgosfacundo.inventory.category.model.Category;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

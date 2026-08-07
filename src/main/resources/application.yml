@@ -18,6 +18,9 @@ spring:
   flyway:
     enabled: true
 
+api:
+  base-path: /api/v1
+
 management:
   endpoints:
     web:

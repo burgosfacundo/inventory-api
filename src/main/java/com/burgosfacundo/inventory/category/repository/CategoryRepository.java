@@ -1,6 +1,6 @@
 package com.burgosfacundo.inventory.category.repository;
 
-import com.burgosfacundo.inventory.category.entity.Category;
+import com.burgosfacundo.inventory.category.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
