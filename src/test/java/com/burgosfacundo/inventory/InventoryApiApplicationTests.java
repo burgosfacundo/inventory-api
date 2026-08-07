@@ -1,6 +1,6 @@
-package com.burgosfacundo.inventory_api;
+package com.burgosfacundo.inventory;
 
-import com.burgosfacundo.inventory_api.config.IntegrationTest;
+import com.burgosfacundo.inventory.config.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
