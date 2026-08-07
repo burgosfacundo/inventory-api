@@ -1,7 +1,7 @@
 package com.burgosfacundo.inventory.category.repository;
 
 
-import com.burgosfacundo.inventory.category.entity.Category;
+import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.config.IntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;

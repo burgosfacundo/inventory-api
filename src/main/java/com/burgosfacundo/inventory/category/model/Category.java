@@ -1,4 +1,4 @@
-package com.burgosfacundo.inventory.category.entity;
+package com.burgosfacundo.inventory.category.model;
 
 import com.burgosfacundo.inventory.category.exception.NameRequiredException;
 import jakarta.persistence.*;

@@ -2,7 +2,7 @@ package com.burgosfacundo.inventory.category.service;
 
 import com.burgosfacundo.inventory.category.dto.CategoryRequest;
 import com.burgosfacundo.inventory.category.dto.CategoryResponse;
-import com.burgosfacundo.inventory.category.entity.Category;
+import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.category.exception.CategoryNotFoundException;
 import com.burgosfacundo.inventory.category.exception.NameRequiredException;
 import com.burgosfacundo.inventory.category.repository.CategoryRepository;
@@ -98,7 +98,7 @@ class CategoryServiceTest {
         );
 
         assertThat(exception.getMessage())
-                .isEqualTo("Category with id 1 not found");
+                .isEqualTo("Category not found with id: 1");
 
         verify(repository).findById(1L);
     }
