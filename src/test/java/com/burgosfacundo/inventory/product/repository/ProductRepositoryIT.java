@@ -5,7 +5,6 @@ import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.category.repository.CategoryRepository;
 import com.burgosfacundo.inventory.config.IntegrationTest;
 import com.burgosfacundo.inventory.product.model.Product;
-import com.burgosfacundo.inventory.product.repositoy.ProductRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
