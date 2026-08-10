@@ -1,6 +1,6 @@
 package com.burgosfacundo.inventory.category.model;
 
-import com.burgosfacundo.inventory.category.exception.NameRequiredException;
+import com.burgosfacundo.inventory.common.exception.NameRequiredException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

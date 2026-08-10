@@ -1,6 +1,6 @@
 package com.burgosfacundo.inventory.category.model;
 
-import com.burgosfacundo.inventory.category.exception.NameRequiredException;
+import com.burgosfacundo.inventory.common.exception.NameRequiredException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
