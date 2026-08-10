@@ -4,7 +4,7 @@ import com.burgosfacundo.inventory.category.dto.CategoryRequest;
 import com.burgosfacundo.inventory.category.dto.CategoryResponse;
 import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.category.exception.CategoryNotFoundException;
-import com.burgosfacundo.inventory.category.exception.NameRequiredException;
+import com.burgosfacundo.inventory.common.exception.NameRequiredException;
 import com.burgosfacundo.inventory.category.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

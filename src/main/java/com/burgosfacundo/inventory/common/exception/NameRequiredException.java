@@ -1,6 +1,4 @@
-package com.burgosfacundo.inventory.category.exception;
-
-import com.burgosfacundo.inventory.common.exception.BadRequestException;
+package com.burgosfacundo.inventory.common.exception;
 
 public class NameRequiredException extends BadRequestException {
     public NameRequiredException() {
