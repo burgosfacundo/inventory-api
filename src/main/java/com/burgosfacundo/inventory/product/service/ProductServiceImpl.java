@@ -39,7 +39,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     @Override
     public ProductResponse findById(Long id) {
-        var product = repository.findById(id)
+        var product = repository.findWithCategoryById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
 
         return ProductMapper.toResponse(product);
@@ -81,7 +81,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Override
     public ProductResponse updateStatus(Long id, boolean active) {
-        var product = repository.findById(id)
+        var product = repository.findWithCategoryById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
 
         if (active) {
