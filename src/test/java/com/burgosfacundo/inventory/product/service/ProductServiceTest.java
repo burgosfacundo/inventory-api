@@ -465,7 +465,7 @@ class ProductServiceTest {
             existingProduct.activate();
         }
 
-        when(repository.findById(1L))
+        when(repository.findWithCategoryById(1L))
                 .thenReturn(Optional.of(existingProduct));
 
         var result = service.updateStatus(1L, active);
@@ -473,16 +473,17 @@ class ProductServiceTest {
         assertThat(result.active()).isEqualTo(active);
         assertThat(existingProduct.getActive()).isEqualTo(active);
 
-        verify(repository).findById(1L);
+        verify(repository).findWithCategoryById(1L);
         verify(repository, never()).save(any(Product.class));
     }
 
     @Test
     void shouldThrowExceptionWhenProductNotFoundForUpdateStatus() {
-        when(repository.findById(1L)).thenReturn(Optional.empty());
+        when(repository.findWithCategoryById(1L))
+                .thenReturn(Optional.empty());
 
         assertThrows(ProductNotFoundException.class, () -> service.updateStatus(1L, false));
-        verify(repository).findById(1L);
+        verify(repository).findWithCategoryById(1L);
         verify(repository, never()).save(any(Product.class));
     }
 
