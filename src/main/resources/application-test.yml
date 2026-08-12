@@ -1,0 +1,4 @@
+geoapify:
+  base-url: https://api.geoapify.test
+  api-key: test-api-key
+  min-confidence: 0.95
