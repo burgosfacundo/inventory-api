@@ -64,6 +64,35 @@ public class GlobalExceptionHandler {
         );
     }
 
+
+    @ExceptionHandler(UnprocessableContentException.class)
+    public ResponseEntity<ProblemDetail> handleUnprocessableContent(
+            UnprocessableContentException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "Unprocessable Content",
+                exception.getMessage(),
+                exception.getErrorCode(),
+                request
+        );
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ProblemDetail> handleServiceUnavailable(
+            ServiceUnavailableException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Service Unavailable",
+                exception.getMessage(),
+                exception.getErrorCode(),
+                request
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleBodyValidation(
             MethodArgumentNotValidException exception,
