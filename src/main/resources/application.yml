@@ -21,6 +21,11 @@ spring:
 api:
   base-path: /api/v1
 
+geoapify:
+  base-url: ${GEOAPIFY_BASE_URL:https://api.geoapify.com}
+  api-key: ${GEOAPIFY_API_KEY}
+  min-confidence: ${GEOAPIFY_MIN_CONFIDENCE:0.95}
+
 management:
   endpoints:
     web:
