@@ -3,7 +3,7 @@ package com.burgosfacundo.inventory.product_supplier.controller;
 import com.burgosfacundo.inventory.common.config.WebConfig;
 import com.burgosfacundo.inventory.common.exception.GlobalExceptionHandler;
 import com.burgosfacundo.inventory.product.exception.ProductNotFoundException;
-import com.burgosfacundo.inventory.product_supplier.dto.ProductSummaryResponse;
+import com.burgosfacundo.inventory.product.dto.ProductSummaryResponse;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierResponse;
 import com.burgosfacundo.inventory.product_supplier.dto.SupplierSummaryResponse;

@@ -3,7 +3,7 @@ package com.burgosfacundo.inventory.product.controller;
 import com.burgosfacundo.inventory.category.exception.CategoryNotFoundException;
 import com.burgosfacundo.inventory.common.config.WebConfig;
 import com.burgosfacundo.inventory.common.exception.GlobalExceptionHandler;
-import com.burgosfacundo.inventory.product.dto.CategorySummaryResponse;
+import com.burgosfacundo.inventory.category.dto.CategorySummaryResponse;
 import com.burgosfacundo.inventory.product.dto.ProductRequest;
 import com.burgosfacundo.inventory.product.dto.ProductResponse;
 import com.burgosfacundo.inventory.product.exception.ProductNotFoundException;

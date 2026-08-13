@@ -1,5 +1,7 @@
 package com.burgosfacundo.inventory.product.dto;
 
+import com.burgosfacundo.inventory.category.dto.CategorySummaryResponse;
+
 import java.math.BigDecimal;
 
 public record ProductResponse(
