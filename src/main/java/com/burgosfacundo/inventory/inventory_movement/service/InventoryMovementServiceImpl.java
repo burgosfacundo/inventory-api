@@ -2,6 +2,7 @@ package com.burgosfacundo.inventory.inventory_movement.service;
 
 import com.burgosfacundo.inventory.inventory_movement.dto.InventoryMovementRequest;
 import com.burgosfacundo.inventory.inventory_movement.dto.InventoryMovementResponse;
+import com.burgosfacundo.inventory.inventory_movement.exception.InvalidMovementDateRangeException;
 import com.burgosfacundo.inventory.inventory_movement.exception.InventoryMovementNotFoundException;
 import com.burgosfacundo.inventory.inventory_movement.mapper.InventoryMovementMapper;
 import com.burgosfacundo.inventory.inventory_movement.model.InventoryMovement;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +73,7 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
     @Transactional(readOnly = true)
     @Override
     public Page<InventoryMovementResponse> findAll(Long productId, Long warehouseId, MovementType type, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        validateDateRange(from, to);
         return movementRepository.findAllFiltered(productId, warehouseId, type, from, to, pageable)
                 .map(InventoryMovementMapper::toResponse);
     }
@@ -91,5 +94,11 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                 .orElseThrow(() -> new StockNotFoundException(product.getId(), warehouse.getId()));
 
         stock.decrease(quantity);
+    }
+
+    private static void validateDateRange(LocalDateTime from, LocalDateTime to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new InvalidMovementDateRangeException();
+        }
     }
 }
