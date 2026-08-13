@@ -2,6 +2,7 @@ package com.burgosfacundo.inventory.inventory_movement.service;
 
 import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.inventory_movement.dto.InventoryMovementRequest;
+import com.burgosfacundo.inventory.inventory_movement.exception.InvalidMovementDateRangeException;
 import com.burgosfacundo.inventory.inventory_movement.exception.InventoryMovementNotFoundException;
 import com.burgosfacundo.inventory.inventory_movement.exception.MovementQuantityInvalidException;
 import com.burgosfacundo.inventory.inventory_movement.model.InventoryMovement;
@@ -616,5 +617,18 @@ class InventoryMovementServiceTest {
         assertThat(result).isEmpty();
 
         verify(repository).findAllFiltered(99L, null, null, null, null, pageable);
+    }
+
+    @Test
+    void shouldRejectInvalidDateRange() {
+        LocalDateTime from = LocalDateTime.of(2026, 8, 20, 0, 0);
+
+        LocalDateTime to = LocalDateTime.of(2026, 8, 10, 0, 0);
+
+        assertThrows(InvalidMovementDateRangeException.class,
+                () -> service.findAll(null, null, null,from,to,
+                        PageRequest.of(0, 20)));
+
+        verify(repository, never()).findAllFiltered(any(), any(), any(), any(), any(), any(Pageable.class));
     }
 }
