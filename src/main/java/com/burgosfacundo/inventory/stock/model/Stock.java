@@ -102,4 +102,8 @@ public class Stock {
             throw new StockQuantityInvalidException();
         }
     }
+
+    public boolean isLowStock() {
+        return quantity <= minimumStock;
+    }
 }

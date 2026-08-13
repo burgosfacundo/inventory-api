@@ -1,4 +1,4 @@
-package com.burgosfacundo.inventory.product.dto;
+package com.burgosfacundo.inventory.category.dto;
 
 public record CategorySummaryResponse(
         Long id,

@@ -1,7 +1,7 @@
 package com.burgosfacundo.inventory.product.mapper;
 
 import com.burgosfacundo.inventory.category.model.Category;
-import com.burgosfacundo.inventory.product.dto.CategorySummaryResponse;
+import com.burgosfacundo.inventory.category.dto.CategorySummaryResponse;
 import com.burgosfacundo.inventory.product.dto.ProductRequest;
 import com.burgosfacundo.inventory.product.dto.ProductResponse;
 import com.burgosfacundo.inventory.product.model.Product;
