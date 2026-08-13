@@ -5,6 +5,7 @@ CREATE TABLE stocks (
     warehouse_id BIGINT NOT NULL,
 
     quantity INT NOT NULL,
+    minimum_stock INT NOT NULL DEFAULT 0,
 
     PRIMARY KEY (id),
 
@@ -23,6 +24,9 @@ CREATE TABLE stocks (
 
     CONSTRAINT chk_stocks_quantity
         CHECK (quantity >= 0)
+
+    CONSTRAINT chk_stocks_minimum_stock
+        CHECK (minimum_stock >= 0)
 );
 
 CREATE INDEX idx_stocks_product_id

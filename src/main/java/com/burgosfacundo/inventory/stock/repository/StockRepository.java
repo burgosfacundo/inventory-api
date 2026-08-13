@@ -55,4 +55,19 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
             Pageable pageable
     );
+
+
+    @EntityGraph(attributePaths = {"product", "warehouse"})
+    @Query("""
+        SELECT s
+        FROM Stock s
+        WHERE s.quantity <= s.minimumStock
+          AND (:warehouseId IS NULL
+               OR s.warehouse.id = :warehouseId)
+    """)
+    Page<Stock> findLowStock(
+            @Param("warehouseId")
+            @Nullable Long warehouseId,
+            Pageable pageable
+    );
 }
