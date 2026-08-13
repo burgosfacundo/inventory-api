@@ -60,12 +60,7 @@ public class InventoryMovement {
     )
     private LocalDateTime createdAt;
 
-    public InventoryMovement(
-            Product product,
-            Warehouse warehouse,
-            MovementType type,
-            int quantity
-    ) {
+    public InventoryMovement(Product product, Warehouse warehouse, MovementType type, int quantity) {
         validateProduct(product);
         validateWarehouse(warehouse);
         validateType(type);
@@ -84,25 +79,19 @@ public class InventoryMovement {
         }
     }
 
-    private static void validateWarehouse(
-            Warehouse warehouse
-    ) {
+    private static void validateWarehouse(Warehouse warehouse) {
         if (warehouse == null) {
             throw new WarehouseRequiredException();
         }
     }
 
-    private static void validateType(
-            MovementType type
-    ) {
+    private static void validateType(MovementType type) {
         if (type == null) {
             throw new MovementTypeRequiredException();
         }
     }
 
-    private static void validateQuantity(
-            int quantity
-    ) {
+    private static void validateQuantity(int quantity) {
         if (quantity <= 0) {
             throw new MovementQuantityInvalidException();
         }

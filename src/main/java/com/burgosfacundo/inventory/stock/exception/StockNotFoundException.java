@@ -11,4 +11,15 @@ public class StockNotFoundException
                 "STOCK_NOT_FOUND"
         );
     }
+
+
+    public StockNotFoundException(Long productId, Long warehouseId) {
+        super(
+                "Stock not found for product id "
+                        + productId
+                        + " and warehouse id "
+                        + warehouseId,
+                "STOCK_NOT_FOUND"
+        );
+    }
 }

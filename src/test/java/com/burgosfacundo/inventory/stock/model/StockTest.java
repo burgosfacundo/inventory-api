@@ -2,10 +2,7 @@ package com.burgosfacundo.inventory.stock.model;
 
 import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.product.model.Product;
-import com.burgosfacundo.inventory.stock.exception.MinimumStockInvalidException;
-import com.burgosfacundo.inventory.stock.exception.ProductRequiredException;
-import com.burgosfacundo.inventory.stock.exception.StockQuantityInvalidException;
-import com.burgosfacundo.inventory.stock.exception.WarehouseRequiredException;
+import com.burgosfacundo.inventory.stock.exception.*;
 import com.burgosfacundo.inventory.warehouse.model.Address;
 import com.burgosfacundo.inventory.warehouse.model.Warehouse;
 import org.junit.jupiter.api.Test;
@@ -179,5 +176,144 @@ class StockTest {
         Stock stock = new Stock(product(), warehouse(), 6, 5);
 
         assertThat(stock.isLowStock()).isFalse();
+    }
+
+
+    @Test
+    void shouldIncreaseStock() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        stock.increase(5);
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(15);
+    }
+
+    @Test
+    void shouldRejectZeroIncrease() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        assertThrows(
+                StockAdjustmentQuantityInvalidException.class,
+                () -> stock.increase(0)
+        );
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(10);
+    }
+
+    @Test
+    void shouldRejectNegativeIncrease() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        assertThrows(
+                StockAdjustmentQuantityInvalidException.class,
+                () -> stock.increase(-1)
+        );
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(10);
+    }
+
+    @Test
+    void shouldDecreaseStock() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        stock.decrease(4);
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(6);
+    }
+
+    @Test
+    void shouldAllowDecreaseToZero() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        stock.decrease(10);
+
+        assertThat(stock.getQuantity())
+                .isZero();
+
+        assertThat(stock.isLowStock())
+                .isTrue();
+    }
+
+    @Test
+    void shouldRejectDecreaseWhenStockIsInsufficient() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        assertThrows(
+                InsufficientStockException.class,
+                () -> stock.decrease(11)
+        );
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(10);
+    }
+
+    @Test
+    void shouldRejectZeroDecrease() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        assertThrows(
+                StockAdjustmentQuantityInvalidException.class,
+                () -> stock.decrease(0)
+        );
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(10);
+    }
+
+    @Test
+    void shouldRejectNegativeDecrease() {
+        Stock stock = new Stock(
+                product(),
+                warehouse(),
+                10,
+                5
+        );
+
+        assertThrows(
+                StockAdjustmentQuantityInvalidException.class,
+                () -> stock.decrease(-1)
+        );
+
+        assertThat(stock.getQuantity())
+                .isEqualTo(10);
     }
 }
