@@ -1,10 +1,7 @@
 package com.burgosfacundo.inventory.stock.model;
 
 import com.burgosfacundo.inventory.product.model.Product;
-import com.burgosfacundo.inventory.stock.exception.MinimumStockInvalidException;
-import com.burgosfacundo.inventory.stock.exception.ProductRequiredException;
-import com.burgosfacundo.inventory.stock.exception.StockQuantityInvalidException;
-import com.burgosfacundo.inventory.stock.exception.WarehouseRequiredException;
+import com.burgosfacundo.inventory.stock.exception.*;
 import com.burgosfacundo.inventory.warehouse.model.Warehouse;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -105,5 +102,27 @@ public class Stock {
 
     public boolean isLowStock() {
         return quantity <= minimumStock;
+    }
+
+    public void increase(int amount) {
+        validateAdjustmentQuantity(amount);
+
+        this.quantity += amount;
+    }
+
+    public void decrease(int amount) {
+        validateAdjustmentQuantity(amount);
+
+        if (amount > quantity) {
+            throw new InsufficientStockException(quantity, amount);
+        }
+
+        this.quantity -= amount;
+    }
+
+    private static void validateAdjustmentQuantity(int amount) {
+        if (amount <= 0) {
+            throw new StockAdjustmentQuantityInvalidException();
+        }
     }
 }
