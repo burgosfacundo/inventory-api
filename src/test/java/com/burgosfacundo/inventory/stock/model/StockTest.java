@@ -165,4 +165,19 @@ class StockTest {
         assertThat(stock.getMinimumStock())
                 .isEqualTo(5);
     }
+
+
+    @Test
+    void shouldBeLowStockWhenQuantityEqualsMinimumStock() {
+        Stock stock = new Stock(product(), warehouse(), 5, 5);
+
+        assertThat(stock.isLowStock()).isTrue();
+    }
+
+    @Test
+    void shouldNotBeLowStockWhenQuantityIsAboveMinimumStock() {
+        Stock stock = new Stock(product(), warehouse(), 6, 5);
+
+        assertThat(stock.isLowStock()).isFalse();
+    }
 }
