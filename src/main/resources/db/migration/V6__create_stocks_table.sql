@@ -23,7 +23,7 @@ CREATE TABLE stocks (
             ON DELETE RESTRICT,
 
     CONSTRAINT chk_stocks_quantity
-        CHECK (quantity >= 0)
+        CHECK (quantity >= 0),
 
     CONSTRAINT chk_stocks_minimum_stock
         CHECK (minimum_stock >= 0)
