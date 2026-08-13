@@ -10,6 +10,7 @@ import com.burgosfacundo.inventory.warehouse.model.Address;
 import com.burgosfacundo.inventory.warehouse.model.Warehouse;
 import com.burgosfacundo.inventory.warehouse.repository.WarehouseRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -577,5 +578,25 @@ class StockRepositoryIT extends IntegrationTest {
                         0
                 )
         );
+    }
+
+
+    @Test
+    void shouldAcquirePessimisticWriteLockWhenFindingStockForUpdate() {
+        Category category = createCategory();
+
+        Product product = createProduct("SKU-001", category);
+
+        Warehouse warehouse = createWarehouse("WH-001");
+
+        Stock stock = repository.saveAndFlush(new Stock(product, warehouse, 10, 5));
+
+        entityManager.clear();
+
+        Stock lockedStock = repository.findByProductIdAndWarehouseIdForUpdate(product.getId(), warehouse.getId())
+                .orElseThrow();
+
+        assertThat(lockedStock.getId()).isEqualTo(stock.getId());
+        assertThat(entityManager.getLockMode(lockedStock)).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
     }
 }
