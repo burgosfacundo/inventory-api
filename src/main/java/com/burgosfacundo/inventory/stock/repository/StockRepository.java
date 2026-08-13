@@ -1,12 +1,14 @@
 package com.burgosfacundo.inventory.stock.repository;
 
 import com.burgosfacundo.inventory.stock.model.Stock;
+import jakarta.persistence.LockModeType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -69,5 +71,18 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
             @Param("warehouseId")
             @Nullable Long warehouseId,
             Pageable pageable
+    );
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT s
+        FROM Stock s
+        WHERE s.product.id = :productId
+          AND s.warehouse.id = :warehouseId
+        """)
+    Optional<Stock> findByProductIdAndWarehouseIdForUpdate(
+            @Param("productId") Long productId,
+            @Param("warehouseId") Long warehouseId
     );
 }
