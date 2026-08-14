@@ -1,10 +1,7 @@
 package com.burgosfacundo.inventory.stock_transfer.model;
 
 import com.burgosfacundo.inventory.product.model.Product;
-import com.burgosfacundo.inventory.stock_transfer.exception.ProductRequiredException;
-import com.burgosfacundo.inventory.stock_transfer.exception.DestinationWarehouseRequiredException;
-import com.burgosfacundo.inventory.stock_transfer.exception.SameWarehouseTransferException;
-import com.burgosfacundo.inventory.stock_transfer.exception.TransferQuantityInvalidException;
+import com.burgosfacundo.inventory.stock_transfer.exception.*;
 import com.burgosfacundo.inventory.warehouse.model.Warehouse;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -60,7 +57,7 @@ public class StockTransfer {
 
     private void validateSourceWarehouse(Warehouse sourceWarehouse) {
         if(sourceWarehouse == null) {
-            throw new DestinationWarehouseRequiredException();
+            throw new SourceWarehouseRequiredException();
         }
     }
 
