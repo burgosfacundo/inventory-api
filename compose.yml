@@ -3,19 +3,59 @@ services:
     image: mysql:8.4
     container_name: inventory-mysql
     environment:
-      MYSQL_DATABASE: inventory_db
-      MYSQL_USER: inventory
-      MYSQL_PASSWORD: inventory
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-inventory_db}
+      MYSQL_USER: ${MYSQL_USER:-inventory}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-inventory}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     ports:
       - "3306:3306"
     volumes:
       - inventory_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root}"
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  inventory-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventory-api
+
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-inventory_db}
+      DB_USERNAME: ${MYSQL_USER:-inventory}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-inventory}
+
+      GEOAPIFY_BASE_URL: ${GEOAPIFY_BASE_URL:-https://api.geoapify.com}
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY}
+      GEOAPIFY_MIN_CONFIDENCE: ${GEOAPIFY_MIN_CONFIDENCE:-0.95}
+
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   inventory_mysql_data:
