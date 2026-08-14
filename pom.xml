@@ -98,6 +98,13 @@
 			<artifactId>spring-boot-starter-restclient-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<version>6.0.0</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- Testcontainers -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
