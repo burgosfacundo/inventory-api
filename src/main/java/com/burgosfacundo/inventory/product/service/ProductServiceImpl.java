@@ -28,7 +28,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductSkuAlreadyExistsException(request.sku());
         }
 
-        var idCategory = request.idCategory();
+        var idCategory = request.categoryId();
         var category = categoryRepository.findById(idCategory)
                 .orElseThrow(() -> new CategoryNotFoundException(idCategory));
 
@@ -63,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductSkuAlreadyExistsException(request.sku());
         }
 
-        var idCategory = request.idCategory();
+        var idCategory = request.categoryId();
         var category = categoryRepository.findById(idCategory)
                 .orElseThrow(() -> new CategoryNotFoundException(idCategory));
 

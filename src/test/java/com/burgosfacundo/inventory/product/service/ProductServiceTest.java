@@ -108,7 +108,7 @@ class ProductServiceTest {
         when(repository.existsBySku(request.sku()))
                 .thenReturn(false);
 
-        when(categoryRepository.findById(request.idCategory()))
+        when(categoryRepository.findById(request.categoryId()))
                 .thenReturn(Optional.of(category));
 
         when(repository.save(any(Product.class)))
@@ -169,7 +169,7 @@ class ProductServiceTest {
         when(repository.existsBySku(request.sku()))
                 .thenReturn(false);
 
-        when(categoryRepository.findById(request.idCategory()))
+        when(categoryRepository.findById(request.categoryId()))
                 .thenReturn(Optional.empty());
 
         assertThrows(CategoryNotFoundException.class, () -> service.save(request));
