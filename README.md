@@ -42,11 +42,7 @@ The main domain includes:
 
 ### UML
 
-![Inventory Domain Model](docs/diagrams/inventory-domain.svg)
-
-The editable diagram is available at:
-
-[`docs/diagrams/inventory-domain.drawio`](docs/diagrams/inventory-domain.drawio)
+![Inventory Domain Model](docs/diagrams/inventory-domain.jpg)
 
 ---
 
@@ -142,12 +138,12 @@ Some of the core rules modeled by the API are:
 
 ## 📚 Documentation
 
-Project design documentation is available under [`docs/`](docs/).
+Project design documentation is available under [`docs/`](docs)
 
 - [Requirements](docs/requirements.md)
 - [API Design](docs/api-design.md)
 - [Architecture](docs/architecture.md)
-- [Domain Model](docs/diagrams/inventory-domain.svg)
+- [Domain Model](docs/diagrams/inventory-domain.jpg)
 
 ---
 
@@ -187,15 +183,111 @@ The project will include different testing levels:
 
 Integration tests will use **Testcontainers with MySQL** instead of an in-memory database.
 
+## 🐳 Local Development with Docker
+
+### Requirements
+
+- Docker
+- Docker Compose
+
+### Environment configuration
+
+Create a local environment file from the provided example:
+
+```bash
+cp .env.example .env
+```
+
+Configure your Geoapify API key in `.env`:
+
+```env
+GEOAPIFY_API_KEY=your-api-key
+```
+
+Database credentials and other environment settings can also be customized through `.env`.
+
+> `.env` is ignored by Git. Do not commit real credentials or API keys.
+
+### Start the application
+
+Run:
+
+```bash
+docker compose up --build
+```
+
+Docker Compose starts:
+
+- Inventory API
+- MySQL 8.4
+
+The application is available at:
+
+```text
+http://localhost:8080
+```
+
+API base path:
+
+```text
+http://localhost:8080/api/v1
+```
+
+Health endpoint:
+
+```text
+http://localhost:8080/actuator/health
+```
+
+Both the API and MySQL containers include health checks.
+
+The API waits until MySQL is healthy before starting.
+
+### Demo data
+
+The Docker environment activates the `demo` Spring profile.
+
+Flyway automatically:
+
+1. Creates the database schema.
+2. Applies all versioned migrations.
+3. Loads representative demo data.
+
+The demo dataset includes:
+
+- Categories
+- Products
+- Suppliers
+- Product-supplier relationships
+- Warehouses
+- Stocks
+- Inventory movements
+- Stock transfers
+
+This allows the API to be explored immediately after startup.
+
+### Stop the application
+
+```bash
+docker compose down
+```
+
+To also remove the MySQL persistent volume:
+
+```bash
+docker compose down -v
+```
+
+A subsequent:
+
+```bash
+docker compose up --build
+```
+
+will recreate the database from scratch using Flyway.
+
 ---
 
-## 🐳 Local Development
-
-Docker Compose support will allow the API and MySQL database to be started in a reproducible environment.
-
-Instructions will be added as the implementation progresses.
-
----
 
 ## 🗺️ Roadmap
 
@@ -203,21 +295,26 @@ Instructions will be added as the implementation progresses.
 - [x] Functional and business requirements
 - [x] REST API contract
 - [x] Architecture definition
-- [ ] Spring Boot project setup
-- [ ] MySQL + Flyway configuration
-- [ ] Product and Category implementation
-- [ ] Supplier management
-- [ ] Warehouse management
-- [ ] Geoapify integration
-- [ ] Stock management
-- [ ] Stock movements and transactional rules
-- [ ] Unit tests
-- [ ] Integration tests with Testcontainers
-- [ ] REST API tests
-- [ ] Docker Compose
-- [ ] OpenAPI documentation
+- [x] Spring Boot project setup
+- [x] MySQL + Flyway configuration
+- [x] Product and Category implementation
+- [x] Supplier management
+- [x] Product-Supplier management
+- [x] Warehouse management
+- [x] Geoapify integration
+- [x] Stock management
+- [x] Inventory movements and transactional rules
+- [x] Warehouse stock transfers
+- [x] Unit tests
+- [x] Integration tests with Testcontainers
+- [x] REST API tests with REST Assured
+- [x] Docker Compose
+- [x] Docker demo environment
+- [ ] OpenAPI / Swagger documentation
 - [ ] GitHub Actions CI
 - [ ] JaCoCo coverage
+- [ ] Final documentation review
+
 
 ---
 

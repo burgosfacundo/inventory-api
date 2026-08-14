@@ -1,0 +1,16 @@
+target
+.git
+.github
+.idea
+.vscode
+
+*.iml
+*.log
+
+.env
+.env.*
+
+docker-compose.override.yml
+
+docs
+README.md
