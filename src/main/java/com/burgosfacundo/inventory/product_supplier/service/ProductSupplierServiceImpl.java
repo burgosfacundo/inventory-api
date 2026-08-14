@@ -2,6 +2,7 @@ package com.burgosfacundo.inventory.product_supplier.service;
 
 import com.burgosfacundo.inventory.product.exception.ProductNotFoundException;
 import com.burgosfacundo.inventory.product.repository.ProductRepository;
+import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierPriceRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierResponse;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierRequest;
 import com.burgosfacundo.inventory.product_supplier.exception.ProductSupplierAlreadyExistsException;
@@ -40,7 +41,7 @@ public class ProductSupplierServiceImpl implements ProductSupplierService {
             );
         }
 
-        var saved = repository.save(ProductSupplierMapper.toEntity(product,supplier));
+        var saved = repository.save(ProductSupplierMapper.toEntity(product,supplier,request.purchasePrice()));
 
         return ProductSupplierMapper.toResponse(saved);
     }
@@ -59,6 +60,17 @@ public class ProductSupplierServiceImpl implements ProductSupplierService {
     public Page<ProductSupplierResponse> findAll(Long productId, Long supplierId,Pageable pageable) {
         return repository.findAllFiltered(productId,supplierId,pageable)
                 .map(ProductSupplierMapper::toResponse);
+    }
+
+    @Transactional
+    @Override
+    public ProductSupplierResponse updatePurchasePrice(Long id, ProductSupplierPriceRequest request) {
+        var productSupplier = repository.findWithRelationsById(id)
+                .orElseThrow(() -> new ProductSupplierNotFoundException(id));
+
+        productSupplier.updatePurchasePrice(request.purchasePrice());
+
+        return ProductSupplierMapper.toResponse(productSupplier);
     }
 
     @Transactional
