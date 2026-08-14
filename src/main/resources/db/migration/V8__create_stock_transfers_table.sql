@@ -13,25 +13,25 @@ CREATE TABLE stock_transfers(
     CONSTRAINT fk_stock_transfers_product
         FOREIGN KEY (product_id)
             REFERENCES products(id)
-            ON DELETE RESTRICT
+            ON DELETE RESTRICT,
 
 
     CONSTRAINT fk_stock_transfers_source_warehouse
         FOREIGN KEY (source_warehouse_id)
             REFERENCES warehouses(id)
-            ON DELETE RESTRICT
+            ON DELETE RESTRICT,
 
     CONSTRAINT fk_stock_transfers_destination_warehouse
         FOREIGN KEY (destination_warehouse_id)
             REFERENCES warehouses(id)
-            ON DELETE RESTRICT
+            ON DELETE RESTRICT,
 
     CONSTRAINT chk_stock_transfers_quantity
-            CHECK (quantity > 0)
+            CHECK (quantity > 0),
 
     CONSTRAINT chk_stock_transfers_different_warehouses
             CHECK (source_warehouse_id <> destination_warehouse_id)
-)
+);
 
 CREATE INDEX idx_stock_transfers_product_id
     ON stock_transfers(product_id);
