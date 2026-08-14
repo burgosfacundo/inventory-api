@@ -78,16 +78,19 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
         );
     }
 
+    private ProductSupplier createAssociation(Product product, Supplier supplier) {
+        return repository.saveAndFlush(
+                new ProductSupplier(product, supplier, new BigDecimal("80.00"))
+        );
+    }
+
     @Test
     void shouldPersistAndRetrieveProductSupplier() {
         Category category = createCategory();
         Product product = createProduct("SKU-1", category);
         Supplier supplier = createSupplier("supplier1@email.com");
 
-        ProductSupplier relation =
-                repository.saveAndFlush(
-                        new ProductSupplier(product, supplier)
-                );
+        ProductSupplier relation = createAssociation(product, supplier);
 
         entityManager.clear();
 
@@ -106,9 +109,7 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
         Product product = createProduct("SKU-1", category);
         Supplier supplier = createSupplier("supplier1@email.com");
 
-        repository.saveAndFlush(
-                new ProductSupplier(product, supplier)
-        );
+        createAssociation(product, supplier);
 
         assertThat(
                 repository.existsByProductIdAndSupplierId(
@@ -132,12 +133,10 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
         Product product = createProduct("SKU-1", category);
         Supplier supplier = createSupplier("supplier1@email.com");
 
-        repository.saveAndFlush(
-                new ProductSupplier(product, supplier)
-        );
+        createAssociation(product, supplier);
 
         assertThrows(DataIntegrityViolationException.class,
-                () -> repository.saveAndFlush(new ProductSupplier(product, supplier)));
+                () -> repository.saveAndFlush(new ProductSupplier(product, supplier, new BigDecimal("80.00"))));
     }
 
 
@@ -152,17 +151,11 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
         Supplier supplier1 = createSupplier("supplier1@email.com");
         Supplier supplier2 = createSupplier("supplier2@email.com");
 
-        ProductSupplier a1 = repository.saveAndFlush(
-                new ProductSupplier(productA, supplier1)
-        );
+        ProductSupplier a1 = createAssociation(productA, supplier1);
 
-        ProductSupplier a2 = repository.saveAndFlush(
-                new ProductSupplier(productA, supplier2)
-        );
+        ProductSupplier a2 = createAssociation(productA, supplier2);
 
-        ProductSupplier b1 = repository.saveAndFlush(
-                new ProductSupplier(productB, supplier1)
-        );
+        ProductSupplier b1 = createAssociation(productB, supplier1);
 
         Pageable pageable = PageRequest.of(0, 20);
 
@@ -219,9 +212,7 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
         Product product = createProduct("SKU-1", category);
         Supplier supplier = createSupplier("supplier@email.com");
 
-        ProductSupplier relation = repository.saveAndFlush(
-                new ProductSupplier(product, supplier)
-        );
+        ProductSupplier relation = createAssociation(product, supplier);
 
         entityManager.clear();
 
@@ -235,14 +226,31 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
 
 
     @Test
+    void shouldPersistPurchasePriceUpdate() {
+        Category category = createCategory();
+        Product product = createProduct("SKU-1", category);
+        Supplier supplier = createSupplier("supplier@email.com");
+
+        ProductSupplier relation = createAssociation(product, supplier);
+
+        relation.updatePurchasePrice(new BigDecimal("95.50"));
+        entityManager.flush();
+        entityManager.clear();
+
+        ProductSupplier found = repository.findWithRelationsById(relation.getId())
+                .orElseThrow();
+
+        assertThat(found.getPurchasePrice()).isEqualByComparingTo("95.50");
+    }
+
+
+    @Test
     void shouldPreventDeletingProductWithSupplierAssociation() {
         Category category = createCategory();
         Product product = createProduct("SKU-1", category);
         Supplier supplier = createSupplier("supplier@email.com");
 
-        repository.saveAndFlush(
-                new ProductSupplier(product, supplier)
-        );
+        createAssociation(product, supplier);
 
         assertThrows(
                 DataIntegrityViolationException.class,
@@ -260,9 +268,7 @@ class ProductSupplierRepositoryIT extends IntegrationTest {
         Product product = createProduct("SKU-1", category);
         Supplier supplier = createSupplier("supplier@email.com");
 
-        repository.saveAndFlush(
-                new ProductSupplier(product, supplier)
-        );
+        createAssociation(product, supplier);
 
         assertThrows(
                 DataIntegrityViolationException.class,

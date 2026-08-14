@@ -17,6 +17,6 @@ public record ProductRequest(
         BigDecimal salePrice,
         @NotNull(message = "Category ID is required")
         @Positive(message = "Category ID must be a positive number")
-        Long idCategory
+        Long categoryId
 ) {
 }

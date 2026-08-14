@@ -9,10 +9,12 @@ import com.burgosfacundo.inventory.supplier.model.Supplier;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProductSupplierMapper {
-    public static ProductSupplier toEntity(Product product, Supplier supplier) {
-        return new ProductSupplier(product,supplier);
+    public static ProductSupplier toEntity(Product product, Supplier supplier, BigDecimal purchasePrice) {
+        return new ProductSupplier(product,supplier,purchasePrice);
     }
 
     public static ProductSupplierResponse toResponse(ProductSupplier entity) {
@@ -24,7 +26,8 @@ public class ProductSupplierMapper {
 
         return new ProductSupplierResponse(entity.getId(),
                 productSum,
-                supplierSum
+                supplierSum,
+                entity.getPurchasePrice()
         );
     }
 }

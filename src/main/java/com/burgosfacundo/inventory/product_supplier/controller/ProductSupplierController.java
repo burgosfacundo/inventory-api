@@ -1,6 +1,7 @@
 package com.burgosfacundo.inventory.product_supplier.controller;
 
 import com.burgosfacundo.inventory.common.web.SortUtils;
+import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierPriceRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierResponse;
 import com.burgosfacundo.inventory.product_supplier.service.ProductSupplierService;
@@ -73,6 +74,16 @@ public class ProductSupplierController {
                         direction,
                         ALLOWED_SORT_FIELDS));
         return ResponseEntity.ok(service.findAll(productId,supplierId,pageable));
+    }
+
+    @PutMapping("/{id}/purchase-price")
+    public ResponseEntity<ProductSupplierResponse> updatePurchasePrice(
+            @PathVariable
+            @Positive(message = "Id must be positive")
+            Long id,
+            @RequestBody @Valid ProductSupplierPriceRequest request) {
+
+        return ResponseEntity.ok(service.updatePurchasePrice(id, request));
     }
 
 

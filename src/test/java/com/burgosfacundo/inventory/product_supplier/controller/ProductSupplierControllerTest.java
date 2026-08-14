@@ -4,6 +4,7 @@ import com.burgosfacundo.inventory.common.config.WebConfig;
 import com.burgosfacundo.inventory.common.exception.GlobalExceptionHandler;
 import com.burgosfacundo.inventory.product.exception.ProductNotFoundException;
 import com.burgosfacundo.inventory.product.dto.ProductSummaryResponse;
+import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierPriceRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierResponse;
 import com.burgosfacundo.inventory.product_supplier.dto.SupplierSummaryResponse;
@@ -27,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -55,29 +57,14 @@ class ProductSupplierControllerTest {
     private ProductSupplierService service;
 
     private ProductSupplierRequest request() {
-        return new ProductSupplierRequest(1L, 2L);
+        return new ProductSupplierRequest(1L, 2L, new BigDecimal("80.00"));
     }
 
     private ProductSupplierResponse response() {
-        ProductSummaryResponse product =
-                new ProductSummaryResponse(
-                        1L,
-                        "SKU-1",
-                        "Product"
-                );
+        ProductSummaryResponse product = new ProductSummaryResponse(1L, "SKU-1", "Product");
+        SupplierSummaryResponse supplier = new SupplierSummaryResponse(2L, "Supplier", "supplier@email.com");
 
-        SupplierSummaryResponse supplier =
-                new SupplierSummaryResponse(
-                        2L,
-                        "Supplier",
-                        "supplier@email.com"
-                );
-
-        return new ProductSupplierResponse(
-                10L,
-                product,
-                supplier
-        );
+        return new ProductSupplierResponse(10L, product, supplier, new BigDecimal("80.00"));
     }
 
     static Stream<Arguments> invalidFindAllParameters() {
@@ -115,6 +102,7 @@ class ProductSupplierControllerTest {
                 .andExpect(jsonPath("$.product.id").value(1))
                 .andExpect(jsonPath("$.product.sku").value("SKU-1"))
                 .andExpect(jsonPath("$.product.name").value("Product"))
+                .andExpect(jsonPath("$.purchasePrice").value(80.00))
 
                 .andExpect(jsonPath("$.supplier.id").value(2))
                 .andExpect(jsonPath("$.supplier.name").value("Supplier"))
@@ -128,7 +116,7 @@ class ProductSupplierControllerTest {
     @Test
     void shouldReturnBadRequestWhenRequestIsInvalid() throws Exception {
         ProductSupplierRequest request =
-                new ProductSupplierRequest(0L, 2L);
+                new ProductSupplierRequest(0L, 2L, new BigDecimal("80.00"));
 
         mockMvc.perform(
                         post("/api/v1/product-suppliers")
@@ -249,7 +237,8 @@ class ProductSupplierControllerTest {
 
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.product.id").value(1))
-                .andExpect(jsonPath("$.supplier.id").value(2));
+                .andExpect(jsonPath("$.supplier.id").value(2))
+                .andExpect(jsonPath("$.purchasePrice").value(80.00));
 
         verify(service).findById(10L);
     }
@@ -333,6 +322,7 @@ class ProductSupplierControllerTest {
                 .andExpect(jsonPath("$.content[0].id").value(10))
                 .andExpect(jsonPath("$.content[0].product.id").value(1))
                 .andExpect(jsonPath("$.content[0].supplier.id").value(2))
+                .andExpect(jsonPath("$.content[0].purchasePrice").value(80.00))
 
                 .andExpect(jsonPath("$.number").value(0))
                 .andExpect(jsonPath("$.size").value(20))
@@ -526,5 +516,97 @@ class ProductSupplierControllerTest {
                         .value("VALIDATION_ERROR"));
 
         verify(service, never()).delete(anyLong());
+    }
+
+
+    @Test
+    void shouldReturnBadRequestWhenPurchasePriceIsNegative() throws Exception {
+        ProductSupplierRequest request =
+                new ProductSupplierRequest(1L, 2L, new BigDecimal("-1.00"));
+
+        mockMvc.perform(post("/api/v1/product-suppliers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+
+        verify(service, never()).save(any(ProductSupplierRequest.class));
+    }
+
+
+    @Test
+    void shouldUpdatePurchasePrice() throws Exception {
+        ProductSupplierPriceRequest request =
+                new ProductSupplierPriceRequest(new BigDecimal("95.50"));
+
+        ProductSummaryResponse product = new ProductSummaryResponse(1L, "SKU-1", "Product");
+        SupplierSummaryResponse supplier =
+                new SupplierSummaryResponse(2L, "Supplier", "supplier@email.com");
+
+        ProductSupplierResponse response =
+                new ProductSupplierResponse(10L, product, supplier, new BigDecimal("95.50"));
+
+        when(service.updatePurchasePrice(10L, request)).thenReturn(response);
+
+        mockMvc.perform(put("/api/v1/product-suppliers/10/purchase-price")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.product.id").value(1))
+                .andExpect(jsonPath("$.supplier.id").value(2))
+                .andExpect(jsonPath("$.purchasePrice").value(95.50));
+
+        verify(service).updatePurchasePrice(10L, request);
+    }
+
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingPurchasePriceOfNonExistingAssociation() throws Exception {
+        ProductSupplierPriceRequest request =
+                new ProductSupplierPriceRequest(new BigDecimal("95.50"));
+
+        when(service.updatePurchasePrice(99L, request))
+                .thenThrow(new ProductSupplierNotFoundException(99L));
+
+        mockMvc.perform(put("/api/v1/product-suppliers/99/purchase-price")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("PRODUCT_SUPPLIER_NOT_FOUND"));
+
+        verify(service).updatePurchasePrice(99L, request);
+    }
+
+
+    @Test
+    void shouldReturnBadRequestWhenUpdatingWithNegativePurchasePrice() throws Exception {
+        ProductSupplierPriceRequest request =
+                new ProductSupplierPriceRequest(new BigDecimal("-1.00"));
+
+        mockMvc.perform(put("/api/v1/product-suppliers/10/purchase-price")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+
+        verify(service, never()).updatePurchasePrice(anyLong(), any(ProductSupplierPriceRequest.class));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUpdatingPurchasePriceWithInvalidId() throws Exception {
+        ProductSupplierPriceRequest request =
+                new ProductSupplierPriceRequest(new BigDecimal("95.50"));
+
+        mockMvc.perform(put("/api/v1/product-suppliers/0/purchase-price")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+
+        verify(service, never()).updatePurchasePrice(anyLong(), any(ProductSupplierPriceRequest.class));
     }
 }

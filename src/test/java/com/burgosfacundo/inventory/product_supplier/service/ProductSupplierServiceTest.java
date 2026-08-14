@@ -4,6 +4,7 @@ import com.burgosfacundo.inventory.category.model.Category;
 import com.burgosfacundo.inventory.product.exception.ProductNotFoundException;
 import com.burgosfacundo.inventory.product.model.Product;
 import com.burgosfacundo.inventory.product.repository.ProductRepository;
+import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierPriceRequest;
 import com.burgosfacundo.inventory.product_supplier.dto.ProductSupplierRequest;
 import com.burgosfacundo.inventory.product_supplier.exception.ProductSupplierAlreadyExistsException;
 import com.burgosfacundo.inventory.product_supplier.exception.ProductSupplierNotFoundException;
@@ -95,18 +96,10 @@ public class ProductSupplierServiceTest {
         return supplier;
     }
 
-    private ProductSupplier associationWithId(
-            Product product,
-            Supplier supplier
-    ) {
-        ProductSupplier association =
-                new ProductSupplier(product, supplier);
+    private ProductSupplier associationWithId(Product product, Supplier supplier, BigDecimal purchasePrice) {
+        ProductSupplier association = new ProductSupplier(product, supplier, purchasePrice);
 
-        ReflectionTestUtils.setField(
-                association,
-                "id",
-                10L
-        );
+        ReflectionTestUtils.setField(association, "id", 10L);
 
         return association;
     }
@@ -116,16 +109,12 @@ public class ProductSupplierServiceTest {
     @Test
     void shouldCreateProductSupplierAssociation() {
         ProductSupplierRequest request =
-                new ProductSupplierRequest(1L, 2L);
+                new ProductSupplierRequest(1L, 2L, new BigDecimal("80.00"));
 
         Product product = productWithId();
         Supplier supplier = supplierWithId();
 
-        ProductSupplier association =
-                associationWithId(
-                        product,
-                        supplier
-                );
+        ProductSupplier association = associationWithId(product, supplier, new BigDecimal("80.00"));
 
         when(productRepository.findById(1L))
                 .thenReturn(Optional.of(product));
@@ -166,7 +155,7 @@ public class ProductSupplierServiceTest {
     @Test
     void shouldThrowProductNotFoundWhenCreatingAssociation() {
         ProductSupplierRequest request =
-                new ProductSupplierRequest(99L, 2L);
+                new ProductSupplierRequest(99L, 2L, new BigDecimal("80.00"));
 
         when(productRepository.findById(99L))
                 .thenReturn(Optional.empty());
@@ -198,7 +187,7 @@ public class ProductSupplierServiceTest {
     @Test
     void shouldThrowSupplierNotFoundWhenCreatingAssociation() {
         ProductSupplierRequest request =
-                new ProductSupplierRequest(1L, 99L);
+                new ProductSupplierRequest(1L, 99L, new BigDecimal("80.00"));
 
         Product product = productWithId();
 
@@ -232,7 +221,7 @@ public class ProductSupplierServiceTest {
     @Test
     void shouldThrowExceptionWhenAssociationAlreadyExists() {
         ProductSupplierRequest request =
-                new ProductSupplierRequest(1L, 2L);
+                new ProductSupplierRequest(1L, 2L, new BigDecimal("80.00"));
 
         Product product = productWithId();
         Supplier supplier = supplierWithId();
@@ -268,11 +257,7 @@ public class ProductSupplierServiceTest {
         Product product = productWithId();
         Supplier supplier = supplierWithId();
 
-        ProductSupplier association =
-                associationWithId(
-                        product,
-                        supplier
-                );
+        ProductSupplier association = associationWithId(product, supplier, new BigDecimal("80.00"));
 
         when(repository.findWithRelationsById(10L))
                 .thenReturn(Optional.of(association));
@@ -310,11 +295,7 @@ public class ProductSupplierServiceTest {
         Product product = productWithId();
         Supplier supplier = supplierWithId();
 
-        ProductSupplier association =
-                associationWithId(
-                        product,
-                        supplier
-                );
+        ProductSupplier association = associationWithId(product, supplier, new BigDecimal("80.00"));
 
         Pageable pageable = PageRequest.of(0, 20);
 
@@ -377,6 +358,50 @@ public class ProductSupplierServiceTest {
                         supplierId,
                         pageable
                 );
+    }
+
+    //Update
+    @Test
+    void shouldUpdatePurchasePrice() {
+        Product product = productWithId();
+        Supplier supplier = supplierWithId();
+
+        ProductSupplier association =
+                associationWithId(product, supplier, new BigDecimal("80.00"));
+
+        ProductSupplierPriceRequest request =
+                new ProductSupplierPriceRequest(new BigDecimal("95.50"));
+
+        when(repository.findWithRelationsById(10L)).thenReturn(Optional.of(association));
+
+        var response = service.updatePurchasePrice(10L, request);
+
+        assertThat(association.getPurchasePrice()).isEqualByComparingTo("95.50");
+        assertThat(response.id()).isEqualTo(10L);
+        assertThat(response.purchasePrice()).isEqualByComparingTo("95.50");
+        assertThat(response.product().id()).isEqualTo(1L);
+        assertThat(response.supplier().id()).isEqualTo(2L);
+
+        verify(repository).findWithRelationsById(10L);
+        verify(repository, never()).save(any(ProductSupplier.class));
+    }
+
+    @Test
+    void shouldThrowProductSupplierNotFoundWhenUpdatingPurchasePrice() {
+        ProductSupplierPriceRequest request =
+                new ProductSupplierPriceRequest(new BigDecimal("95.50"));
+
+        when(repository.findWithRelationsById(99L)).thenReturn(Optional.empty());
+
+        var exception = assertThrows(
+                ProductSupplierNotFoundException.class,
+                () -> service.updatePurchasePrice(99L, request)
+        );
+
+        assertThat(exception.getErrorCode()).isEqualTo("PRODUCT_SUPPLIER_NOT_FOUND");
+
+        verify(repository).findWithRelationsById(99L);
+        verify(repository, never()).save(any(ProductSupplier.class));
     }
 
 
