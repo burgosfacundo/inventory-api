@@ -238,7 +238,7 @@ class ProductSupplierControllerTest {
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.product.id").value(1))
                 .andExpect(jsonPath("$.supplier.id").value(2))
-                .andExpect(jsonPath("$.purchasePrice").value(80.00));;
+                .andExpect(jsonPath("$.purchasePrice").value(80.00));
 
         verify(service).findById(10L);
     }
