@@ -118,6 +118,8 @@ public class WarehouseController {
     }
 
     @Operation(summary = "Delete a warehouse")
+    @ApiResponse(responseCode = "400", ref = "#/components/responses/BadRequest")
+    @ApiResponse(responseCode = "404", ref = "#/components/responses/NotFound")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable

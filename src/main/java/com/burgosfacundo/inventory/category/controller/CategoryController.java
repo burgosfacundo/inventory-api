@@ -4,6 +4,7 @@ import com.burgosfacundo.inventory.category.dto.CategoryRequest;
 import com.burgosfacundo.inventory.category.dto.CategoryResponse;
 import com.burgosfacundo.inventory.category.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -22,12 +23,15 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @Operation(summary = "Create a category")
+    @ApiResponse(responseCode = "400", ref = "#/components/responses/BadRequest")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(@RequestBody @Valid CategoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.create(request));
     }
 
     @Operation(summary = "Get category by id")
+    @ApiResponse(responseCode = "400", ref = "#/components/responses/BadRequest")
+    @ApiResponse(responseCode = "404", ref = "#/components/responses/NotFound")
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> findById(
             @PathVariable
@@ -43,6 +47,8 @@ public class CategoryController {
     }
 
     @Operation(summary = "Update a category")
+    @ApiResponse(responseCode = "400", ref = "#/components/responses/BadRequest")
+    @ApiResponse(responseCode = "404", ref = "#/components/responses/NotFound")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> update(
             @PathVariable

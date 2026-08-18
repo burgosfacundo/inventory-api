@@ -108,6 +108,8 @@ public class SupplierController {
             summary = "Update supplier status",
             description = "Activates or deactivates a supplier."
     )
+    @ApiResponse(responseCode = "400", ref = "#/components/responses/BadRequest")
+    @ApiResponse(responseCode = "404", ref = "#/components/responses/NotFound")
     @PatchMapping("/{id}/status")
     public ResponseEntity<SupplierResponse> updateStatus(
             @RequestParam
@@ -119,6 +121,8 @@ public class SupplierController {
     }
 
     @Operation(summary = "Delete a supplier")
+    @ApiResponse(responseCode = "400", ref = "#/components/responses/BadRequest")
+    @ApiResponse(responseCode = "404", ref = "#/components/responses/NotFound")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable
                                        @Positive(message = "Id must be positive")
