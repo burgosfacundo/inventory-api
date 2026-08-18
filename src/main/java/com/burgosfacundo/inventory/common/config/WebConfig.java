@@ -20,7 +20,11 @@ public class WebConfig implements WebMvcConfigurer {
     public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer.addPathPrefix(
                 apiBasePath,
-                HandlerTypePredicate.forAnnotation(RestController.class)
+                HandlerTypePredicate
+                        .forAnnotation(RestController.class)
+                        .and(HandlerTypePredicate.forBasePackage(
+                                "com.burgosfacundo.inventory"
+                        ))
         );
     }
 }

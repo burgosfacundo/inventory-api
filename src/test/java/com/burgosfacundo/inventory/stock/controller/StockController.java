@@ -3,7 +3,6 @@ package com.burgosfacundo.inventory.stock.controller;
 import com.burgosfacundo.inventory.common.config.WebConfig;
 import com.burgosfacundo.inventory.common.exception.GlobalExceptionHandler;
 import com.burgosfacundo.inventory.product.dto.ProductSummaryResponse;
-import com.burgosfacundo.inventory.stock.StockController;
 import com.burgosfacundo.inventory.stock.dto.StockMinimumRequest;
 import com.burgosfacundo.inventory.stock.dto.StockResponse;
 import com.burgosfacundo.inventory.stock.exception.StockNotFoundException;
