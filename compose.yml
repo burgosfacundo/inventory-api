@@ -35,14 +35,9 @@ services:
 
     environment:
       SPRING_PROFILES_ACTIVE: demo
-
       DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-inventory_db}
       DB_USERNAME: ${MYSQL_USER:-inventory}
       DB_PASSWORD: ${MYSQL_PASSWORD:-inventory}
-
-      GEOAPIFY_BASE_URL: ${GEOAPIFY_BASE_URL:-https://api.geoapify.com}
-      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY}
-      GEOAPIFY_MIN_CONFIDENCE: ${GEOAPIFY_MIN_CONFIDENCE:-0.95}
 
     ports:
       - "8080:8080"
