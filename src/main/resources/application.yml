@@ -20,6 +20,15 @@ spring:
 
 api:
   base-path: /api/v1
+  documentation:
+    title: Inventory API
+    version: "@project.version@"
+    description: REST API for inventory, warehouse and stock management.
+
+springdoc:
+  paths-to-match: "${api.base-path}/**"
+  swagger-ui:
+    path: /swagger-ui.html
 
 geoapify:
   base-url: ${GEOAPIFY_BASE_URL:https://api.geoapify.com}
@@ -31,3 +40,12 @@ management:
     web:
       exposure:
         include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+    app:
+      name: ${api.documentation.title}
+      version: ${api.documentation.version}
+      description: ${api.documentation.description}

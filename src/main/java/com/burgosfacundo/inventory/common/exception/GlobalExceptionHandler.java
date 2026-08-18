@@ -1,6 +1,7 @@
 package com.burgosfacundo.inventory.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -157,29 +159,28 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ProblemDetail> handleMissingRequestParameter(
-            MissingServletRequestParameterException ex
-    ) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "Required request parameter '" + ex.getParameterName() + "' is missing"
-        );
-
-        problem.setTitle("Validation failed");
-        problem.setProperty("errorCode", "VALIDATION_ERROR");
-
-        return ResponseEntity.badRequest().body(problem);
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ProblemDetail> handleMalformedRequest(
-            HttpMessageNotReadableException exception,
+            MissingServletRequestParameterException exception,
             HttpServletRequest request
     ) {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                "Request body is malformed or unreadable",
-                "MALFORMED_REQUEST",
+                "Validation Error",
+                "Required request parameter '" + exception.getParameterName() + "' is missing",
+                "VALIDATION_ERROR",
+                request
+        );
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNoResourceFound(
+            NoResourceFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "Resource Not Found",
+                "The requested resource was not found",
+                "RESOURCE_NOT_FOUND",
                 request
         );
     }
@@ -189,6 +190,13 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
+        log.error(
+                "Unexpected error while processing {} {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception
+        );
+
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
