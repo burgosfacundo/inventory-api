@@ -3,6 +3,7 @@ package com.burgosfacundo.inventory.warehouse.integration.geoapify;
 import com.burgosfacundo.inventory.warehouse.dto.AddressRequest;
 import com.burgosfacundo.inventory.warehouse.exception.AddressProviderUnavailableException;
 import com.burgosfacundo.inventory.warehouse.integration.geoapify.dto.GeoapifyResponse;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestClientException;
 import java.util.Locale;
 
 @Component
+@Profile("!demo")
 public class GeoapifyClient {
 
     private final RestClient restClient;

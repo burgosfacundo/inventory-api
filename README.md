@@ -190,23 +190,22 @@ Integration tests will use **Testcontainers with MySQL** instead of an in-memory
 - Docker
 - Docker Compose
 
-### Environment configuration
+### Zero-configuration demo
 
-Create a local environment file from the provided example:
+The Docker environment uses the `demo` Spring profile and does not require a Geoapify API key or any other external credentials.
+
+Can clone the repository and start the complete environment directly:
 
 ```bash
-cp .env.example .env
+docker compose up --build
 ```
 
-Configure your Geoapify API key in `.env`:
+No `.env` file is required for the demo environment.
 
-```env
-GEOAPIFY_API_KEY=your-api-key
-```
+The demo profile uses an offline `AddressValidator` implementation for Warehouse creation and updates, so no external HTTP request is made to Geoapify. Demo addresses keep the submitted address data and use placeholder coordinates.
 
-Database credentials and other environment settings can also be customized through `.env`.
+Real Geoapify address validation remains available when running the application outside the `demo` profile. In that case, configure the required Geoapify variables using `.env.example` as a reference.
 
-> `.env` is ignored by Git. Do not commit real credentials or API keys.
 
 ### Start the application
 
@@ -243,9 +242,15 @@ Both the API and MySQL containers include health checks.
 
 The API waits until MySQL is healthy before starting.
 
-### Demo data
+### Demo environment
 
 The Docker environment activates the `demo` Spring profile.
+
+In this profile:
+
+- Geoapify is not required.
+- Warehouse address validation runs locally without external HTTP calls.
+- Address coordinates are placeholders intended only for demo/portfolio evaluation.
 
 Flyway automatically:
 

@@ -7,11 +7,13 @@ import com.burgosfacundo.inventory.warehouse.integration.geoapify.dto.GeoapifyRe
 import com.burgosfacundo.inventory.warehouse.model.Address;
 import com.burgosfacundo.inventory.warehouse.service.AddressValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 
 @Component
+@Profile("!demo")
 @RequiredArgsConstructor
 public class GeoapifyAddressValidator
         implements AddressValidator {
