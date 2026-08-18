@@ -22,7 +22,7 @@ Inventory API manages:
 
 The project intentionally goes beyond a basic CRUD API.
 
-Stock quantities cannot be modified directly. Every stock change must be represented by a traceable stock movement.
+Stock quantities cannot be modified directly. Every stock change must be represented by a traceable inventory movement.
 
 ---
 
@@ -37,7 +37,8 @@ The main domain includes:
 - `Warehouse`
 - `Address` — Value Object
 - `Stock`
-- `StockMovement`
+- `InventoryMovement`
+- `StockTransfer`
 - `MovementType`
 
 ### UML
@@ -86,7 +87,7 @@ Some of the core rules modeled by the API are:
 - Stock is unique per `Product + Warehouse`.
 - Stock can never become negative.
 - Stock quantity cannot be modified directly.
-- Every stock change generates a `StockMovement`.
+- Every stock change generates a traceable `InventoryMovement`.
 - Outbound movements are rejected when stock is insufficient.
 - The first inbound movement automatically creates the stock record.
 - Manual stock adjustments require a reason.
@@ -149,24 +150,48 @@ Project design documentation is available under [`docs/`](docs)
 
 ## 🌐 API
 
-The API will be versioned from the beginning:
+The API is versioned under:
 
 ```text
 /api/v1
 ```
 
-Planned main resources:
+Main resources:
 
 ```text
-/api/v1/products
 /api/v1/categories
+/api/v1/products
 /api/v1/suppliers
+/api/v1/product-suppliers
 /api/v1/warehouses
 /api/v1/stocks
-/api/v1/stock-movements
+/api/v1/inventory-movements
+/api/v1/stock-transfers
 ```
 
-The complete HTTP contract is documented in:
+### Interactive API documentation
+
+After starting the application, the API can be explored directly through Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+OpenAPI specification:
+
+```text
+http://localhost:8080/v3/api-docs
+http://localhost:8080/v3/api-docs.yaml
+```
+
+Operational endpoints:
+
+```text
+http://localhost:8080/actuator/health
+http://localhost:8080/actuator/info
+```
+
+The complete design documentation is also available in:
 
 [API Design](docs/api-design.md)
 
@@ -206,7 +231,6 @@ The demo profile uses an offline `AddressValidator` implementation for Warehouse
 
 Real Geoapify address validation remains available when running the application outside the `demo` profile. In that case, configure the required Geoapify variables using `.env.example` as a reference.
 
-
 ### Start the application
 
 Run:
@@ -226,17 +250,17 @@ The application is available at:
 http://localhost:8080
 ```
 
-API base path:
+Useful URLs:
 
-```text
-http://localhost:8080/api/v1
-```
+| Resource | URL |
+|---|---|
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| API base path | http://localhost:8080/api/v1 |
+| Health | http://localhost:8080/actuator/health |
+| Application info | http://localhost:8080/actuator/info |
 
-Health endpoint:
-
-```text
-http://localhost:8080/actuator/health
-```
+Swagger UI is the recommended way to explore and execute requests against the demo API.
 
 Both the API and MySQL containers include health checks.
 
@@ -293,7 +317,6 @@ will recreate the database from scratch using Flyway.
 
 ---
 
-
 ## 🗺️ Roadmap
 
 - [x] Domain modeling
@@ -315,11 +338,10 @@ will recreate the database from scratch using Flyway.
 - [x] REST API tests with REST Assured
 - [x] Docker Compose
 - [x] Docker demo environment
-- [ ] OpenAPI / Swagger documentation
+- [x] OpenAPI / Swagger documentation
 - [ ] GitHub Actions CI
 - [ ] JaCoCo coverage
 - [ ] Final documentation review
-
 
 ---
 
