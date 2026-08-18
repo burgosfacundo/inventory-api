@@ -3,6 +3,8 @@ package com.burgosfacundo.inventory.category.controller;
 import com.burgosfacundo.inventory.category.dto.CategoryRequest;
 import com.burgosfacundo.inventory.category.dto.CategoryResponse;
 import com.burgosfacundo.inventory.category.service.CategoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -14,15 +16,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/categories")
+@Tag(name = "Categories", description = "Manage product categories.")
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
 
+    @Operation(summary = "Create a category")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(@RequestBody @Valid CategoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.create(request));
     }
 
+    @Operation(summary = "Get category by id")
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> findById(
             @PathVariable
@@ -31,11 +36,13 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.findById(id));
     }
 
+    @Operation(summary = "List categories")
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getAll() {
         return ResponseEntity.ok(categoryService.findAll());
     }
 
+    @Operation(summary = "Update a category")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> update(
             @PathVariable
