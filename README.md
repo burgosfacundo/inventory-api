@@ -2,6 +2,8 @@
 
 REST API for inventory, warehouse and stock management built with Java and Spring Boot.
 
+[![CI](https://github.com/burgosfacundo/inventory-api/actions/workflows/ci.yml/badge.svg)](https://github.com/burgosfacundo/inventory-api/actions/workflows/ci.yml)
+
 > 🚧 **Status:** In development
 
 The goal of this project is to model real-world inventory operations while applying production-oriented backend practices such as clean separation of responsibilities, database migrations, automated testing, containerization and API documentation.
@@ -199,14 +201,80 @@ The complete design documentation is also available in:
 
 ## 🧪 Testing Strategy
 
-The project will include different testing levels:
+The project uses different testing levels:
 
 - **Unit tests** for business rules and services
+- **Controller tests** for HTTP contracts, validation and error responses
 - **Repository integration tests** using a real MySQL container
 - **API integration tests** using REST Assured
-- **External service isolation** for Geoapify integration tests
+- **Infrastructure integration tests** for OpenAPI and Actuator endpoints
+- **External service isolation** for Geoapify-related application tests
 
-Integration tests will use **Testcontainers with MySQL** instead of an in-memory database.
+Integration tests use **Testcontainers with MySQL** instead of an in-memory database.
+
+### Running tests
+
+Run the regular test suite:
+
+```bash
+mvn test
+```
+
+Run the complete verification lifecycle:
+
+```bash
+mvn verify
+```
+
+`mvn test` executes the regular `*Test` suite through Maven Surefire.
+
+`mvn verify` performs the complete project verification:
+
+- runs the regular Surefire test suite
+- runs `*IT` integration tests through Maven Failsafe
+- starts MySQL integration environments with Testcontainers
+- generates combined JaCoCo coverage from regular and integration tests
+- validates the configured coverage thresholds
+
+Docker must be running to execute the complete integration test suite locally.
+
+### Code coverage
+
+JaCoCo collects coverage from both regular tests and integration tests and merges the results into a single report.
+
+The generated HTML report is available at:
+
+```text
+target/site/jacoco/index.html
+```
+
+The build enforces the following minimum project-wide coverage:
+
+- **Line coverage:** 90%
+- **Branch coverage:** 80%
+
+If either threshold is not met, the Maven `verify` phase fails.
+
+### Continuous Integration
+
+GitHub Actions automatically runs the complete verification pipeline:
+
+- on pull requests targeting `main`
+- on pushes to `main`
+
+The CI workflow:
+
+- runs on Ubuntu
+- configures Eclipse Temurin Java 25
+- caches Maven dependencies
+- executes `mvn --batch-mode verify`
+- runs Testcontainers-based MySQL integration tests
+- validates the JaCoCo coverage thresholds
+- uploads the generated JaCoCo HTML report as a workflow artifact
+
+This ensures that the project is validated in a clean environment independently from the developer machine.
+
+---
 
 ## 🐳 Local Development with Docker
 
@@ -339,8 +407,8 @@ will recreate the database from scratch using Flyway.
 - [x] Docker Compose
 - [x] Docker demo environment
 - [x] OpenAPI / Swagger documentation
-- [ ] GitHub Actions CI
-- [ ] JaCoCo coverage
+- [x] GitHub Actions CI
+- [x] JaCoCo coverage
 - [ ] Final documentation review
 
 ---
