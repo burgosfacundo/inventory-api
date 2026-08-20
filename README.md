@@ -23,7 +23,7 @@ Inventory API is a portfolio backend built with **Java 25 and Spring Boot 4.1**.
 - Pessimistic locking for concurrent stock-changing operations
 - Flyway-managed MySQL schema
 - Geoapify address validation behind an application abstraction
-- Zero-configuration offline Docker demo
+- Zero-configuration Docker demo without Geoapify credentials
 - OpenAPI / Swagger UI
 - Spring Boot Actuator health and info endpoints
 - Unit, controller, repository and API integration tests
@@ -272,9 +272,9 @@ Example:
   "type": "about:blank",
   "title": "Conflict",
   "status": 409,
-  "detail": "The operation could not be completed.",
+  "detail": "Insufficient stock. Available: 3, requested: 5",
   "instance": "/api/v1/inventory-movements",
-  "errorCode": "BUSINESS_CONFLICT"
+  "errorCode": "INSUFFICIENT_STOCK"
 }
 ```
 

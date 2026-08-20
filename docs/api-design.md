@@ -106,7 +106,7 @@ Typical response:
   "type": "about:blank",
   "title": "Conflict",
   "status": 409,
-  "detail": "A product with SKU NB-LNV-001 already exists.",
+  "detail": "Product with SKU 'NB-LNV-001' already exists.",
   "instance": "/api/v1/products",
   "errorCode": "PRODUCT_SKU_ALREADY_EXISTS"
 }
@@ -244,7 +244,7 @@ numberOfElements
 
 ---
 
-# 6. Categories
+## 6. Categories
 
 Base resource:
 
@@ -254,7 +254,7 @@ Base resource:
 
 Categories are reference data and are returned as a complete list rather than a paginated page.
 
-## 6.1 Create Category
+### 6.1 Create Category
 
 ```http
 POST /api/v1/categories
@@ -294,7 +294,7 @@ Possible errors:
 
 ---
 
-## 6.2 Get Category
+### 6.2 Get Category
 
 ```http
 GET /api/v1/categories/{id}
@@ -309,7 +309,7 @@ Possible errors:
 
 ---
 
-## 6.3 List Categories
+### 6.3 List Categories
 
 ```http
 GET /api/v1/categories
@@ -323,7 +323,7 @@ List<CategoryResponse>
 
 ---
 
-## 6.4 Update Category
+### 6.4 Update Category
 
 ```http
 PUT /api/v1/categories/{id}
@@ -342,7 +342,7 @@ Category deletion is not exposed in version 1.
 
 ---
 
-# 7. Products
+## 7. Products
 
 Base resource:
 
@@ -350,7 +350,7 @@ Base resource:
 /api/v1/products
 ```
 
-## 7.1 Create Product
+### 7.1 Create Product
 
 ```http
 POST /api/v1/products
@@ -403,7 +403,7 @@ Possible errors:
 
 ---
 
-## 7.2 Get Product
+### 7.2 Get Product
 
 ```http
 GET /api/v1/products/{id}
@@ -418,7 +418,7 @@ Possible errors:
 
 ---
 
-## 7.3 List Products
+### 7.3 List Products
 
 ```http
 GET /api/v1/products
@@ -473,7 +473,7 @@ Page<ProductResponse>
 
 ---
 
-## 7.4 Update Product
+### 7.4 Update Product
 
 ```http
 PUT /api/v1/products/{id}
@@ -493,7 +493,7 @@ Possible errors:
 
 ---
 
-## 7.5 Update Product Status
+### 7.5 Update Product Status
 
 ```http
 PATCH /api/v1/products/{id}/status?active=false
@@ -526,7 +526,7 @@ Possible errors:
 
 ---
 
-## 7.6 Delete Product
+### 7.6 Delete Product
 
 ```http
 DELETE /api/v1/products/{id}
@@ -549,7 +549,7 @@ Database foreign-key constraints may reject deletion when the product is referen
 
 ---
 
-# 8. Suppliers
+## 8. Suppliers
 
 Base resource:
 
@@ -557,7 +557,7 @@ Base resource:
 /api/v1/suppliers
 ```
 
-## 8.1 Create Supplier
+### 8.1 Create Supplier
 
 ```http
 POST /api/v1/suppliers
@@ -604,7 +604,7 @@ Possible errors:
 
 ---
 
-## 8.2 Get Supplier
+### 8.2 Get Supplier
 
 ```http
 GET /api/v1/suppliers/{id}
@@ -619,7 +619,7 @@ Possible errors:
 
 ---
 
-## 8.3 List Suppliers
+### 8.3 List Suppliers
 
 ```http
 GET /api/v1/suppliers
@@ -657,7 +657,7 @@ Page<SupplierResponse>
 
 ---
 
-## 8.4 Update Supplier
+### 8.4 Update Supplier
 
 ```http
 PUT /api/v1/suppliers/{id}
@@ -675,7 +675,7 @@ Possible errors:
 
 ---
 
-## 8.5 Update Supplier Status
+### 8.5 Update Supplier Status
 
 ```http
 PATCH /api/v1/suppliers/{id}/status?active=false
@@ -692,7 +692,7 @@ Possible errors:
 
 ---
 
-## 8.6 Delete Supplier
+### 8.6 Delete Supplier
 
 ```http
 DELETE /api/v1/suppliers/{id}
@@ -715,7 +715,7 @@ Database referential integrity may prevent deletion while product-supplier relat
 
 ---
 
-# 9. Product-Supplier Relationships
+## 9. Product-Supplier Relationships
 
 Base resource:
 
@@ -731,7 +731,7 @@ It is not exposed through the earlier nested design:
 /products/{productId}/suppliers
 ```
 
-## 9.1 Create Product-Supplier Relationship
+### 9.1 Create Product-Supplier Relationship
 
 ```http
 POST /api/v1/product-suppliers
@@ -767,7 +767,8 @@ Rules:
   },
   "supplier": {
     "id": 5,
-    "name": "Tech Distribution S.A."
+    "name": "Tech Distribution S.A.",
+    "email": "sales@techdistribution.com"
   },
   "purchasePrice": 980.50
 }
@@ -783,7 +784,7 @@ Possible errors:
 
 ---
 
-## 9.2 Get Product-Supplier Relationship
+### 9.2 Get Product-Supplier Relationship
 
 ```http
 GET /api/v1/product-suppliers/{id}
@@ -798,7 +799,7 @@ Possible errors:
 
 ---
 
-## 9.3 List Product-Supplier Relationships
+### 9.3 List Product-Supplier Relationships
 
 ```http
 GET /api/v1/product-suppliers
@@ -842,7 +843,7 @@ Page<ProductSupplierResponse>
 
 ---
 
-## 9.4 Update Purchase Price
+### 9.4 Update Purchase Price
 
 ```http
 PUT /api/v1/product-suppliers/{id}/purchase-price
@@ -871,7 +872,7 @@ Possible errors:
 
 ---
 
-## 9.5 Delete Product-Supplier Relationship
+### 9.5 Delete Product-Supplier Relationship
 
 ```http
 DELETE /api/v1/product-suppliers/{id}
@@ -892,7 +893,7 @@ Possible errors:
 
 ---
 
-# 10. Warehouses
+## 10. Warehouses
 
 Base resource:
 
@@ -904,7 +905,7 @@ Warehouse creation and update both validate the complete submitted address befor
 
 There is no separate version 1 endpoint for updating only the address.
 
-## 10.1 Warehouse Address Input
+### 10.1 Warehouse Address Input
 
 ### `AddressRequest`
 
@@ -929,7 +930,7 @@ The resulting persisted address also contains latitude and longitude.
 
 ---
 
-## 10.2 Create Warehouse
+### 10.2 Create Warehouse
 
 ```http
 POST /api/v1/warehouses
@@ -993,7 +994,7 @@ No invalid warehouse state is persisted when address validation fails.
 
 ---
 
-## 10.3 Get Warehouse
+### 10.3 Get Warehouse
 
 ```http
 GET /api/v1/warehouses/{id}
@@ -1008,7 +1009,7 @@ Possible errors:
 
 ---
 
-## 10.4 List Warehouses
+### 10.4 List Warehouses
 
 ```http
 GET /api/v1/warehouses
@@ -1039,7 +1040,7 @@ Page<WarehouseResponse>
 
 ---
 
-## 10.5 Update Warehouse
+### 10.5 Update Warehouse
 
 ```http
 PUT /api/v1/warehouses/{id}
@@ -1061,7 +1062,7 @@ Possible errors:
 
 ---
 
-## 10.6 Delete Warehouse
+### 10.6 Delete Warehouse
 
 ```http
 DELETE /api/v1/warehouses/{id}
@@ -1086,7 +1087,7 @@ Warehouses do not expose an active/inactive status endpoint in version 1.
 
 ---
 
-# 11. Stocks
+## 11. Stocks
 
 Base resource:
 
@@ -1103,7 +1104,7 @@ InventoryMovement
 StockTransfer
 ```
 
-## 11.1 Get Stock
+### 11.1 Get Stock
 
 ```http
 GET /api/v1/stocks/{id}
@@ -1145,7 +1146,7 @@ Possible errors:
 
 ---
 
-## 11.2 List Stocks
+### 11.2 List Stocks
 
 ```http
 GET /api/v1/stocks
@@ -1191,7 +1192,7 @@ Page<StockResponse>
 
 ---
 
-## 11.3 List Low Stock
+### 11.3 List Low Stock
 
 ```http
 GET /api/v1/stocks/low-stock
@@ -1213,7 +1214,7 @@ Page<StockResponse>
 
 ---
 
-## 11.4 Update Minimum Stock
+### 11.4 Update Minimum Stock
 
 ```http
 PATCH /api/v1/stocks/{id}/minimum-stock
@@ -1248,7 +1249,7 @@ minimumStock = 0
 
 ---
 
-# 12. Inventory Movements
+## 12. Inventory Movements
 
 Base resource:
 
@@ -1269,7 +1270,7 @@ There are no version 1 `PURCHASE`, `SALE`, `ADJUSTMENT_IN` or `ADJUSTMENT_OUT` m
 
 There is no `reason` field in the final movement contract.
 
-## 12.1 Register Inventory Movement
+### 12.1 Register Inventory Movement
 
 ```http
 POST /api/v1/inventory-movements
@@ -1331,7 +1332,7 @@ Possible errors:
 
 ---
 
-## 12.2 Get Inventory Movement
+### 12.2 Get Inventory Movement
 
 ```http
 GET /api/v1/inventory-movements/{id}
@@ -1346,7 +1347,7 @@ Possible errors:
 
 ---
 
-## 12.3 List Inventory Movements
+### 12.3 List Inventory Movements
 
 ```http
 GET /api/v1/inventory-movements
@@ -1403,7 +1404,7 @@ Inventory movements do not expose update or delete operations.
 
 ---
 
-# 13. Stock Transfers
+## 13. Stock Transfers
 
 Base resource:
 
@@ -1413,7 +1414,7 @@ Base resource:
 
 A stock transfer moves one product between two different warehouses and records the operation as a historical transfer plus inventory movements.
 
-## 13.1 Create Stock Transfer
+### 13.1 Create Stock Transfer
 
 ```http
 POST /api/v1/stock-transfers
@@ -1472,13 +1473,13 @@ Possible errors:
 
 | Status | Condition |
 |---|---|
-| `400` | Invalid request |
+| `400` | Invalid request or source and destination warehouses are the same |
 | `404` | Product, warehouse or source stock does not exist |
-| `409` | Same source/destination warehouse or insufficient stock |
+| `409` | Insufficient stock |
 
 ---
 
-## 13.2 Get Stock Transfer
+### 13.2 Get Stock Transfer
 
 ```http
 GET /api/v1/stock-transfers/{id}
@@ -1493,7 +1494,7 @@ Possible errors:
 
 ---
 
-## 13.3 List Stock Transfers
+### 13.3 List Stock Transfers
 
 ```http
 GET /api/v1/stock-transfers
@@ -1549,9 +1550,9 @@ Stock transfers do not expose update or delete operations.
 
 ---
 
-# 14. DTO Summary
+## 14. DTO Summary
 
-## Category
+### Category
 
 ```text
 CategoryRequest
@@ -1559,7 +1560,7 @@ CategoryResponse
 CategorySummaryResponse
 ```
 
-## Product
+### Product
 
 ```text
 ProductRequest
@@ -1567,23 +1568,23 @@ ProductResponse
 ProductSummaryResponse
 ```
 
-## Supplier
+### Supplier
 
 ```text
 SupplierRequest
 SupplierResponse
-SupplierSummaryResponse
 ```
 
-## Product Supplier
+### Product Supplier
 
 ```text
 ProductSupplierRequest
 ProductSupplierPriceRequest
 ProductSupplierResponse
+SupplierSummaryResponse
 ```
 
-## Warehouse
+### Warehouse
 
 ```text
 WarehouseRequest
@@ -1593,21 +1594,21 @@ AddressRequest
 AddressResponse
 ```
 
-## Stock
+### Stock
 
 ```text
 StockMinimumRequest
 StockResponse
 ```
 
-## Inventory Movement
+### Inventory Movement
 
 ```text
 InventoryMovementRequest
 InventoryMovementResponse
 ```
 
-## Stock Transfer
+### Stock Transfer
 
 ```text
 StockTransferRequest
@@ -1618,7 +1619,7 @@ Persistence entities are not returned directly through controllers.
 
 ---
 
-# 15. Endpoint Summary
+## 15. Endpoint Summary
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -1661,7 +1662,7 @@ Persistence entities are not returned directly through controllers.
 
 ---
 
-# 16. OpenAPI and Operational Endpoints
+## 16. OpenAPI and Operational Endpoints
 
 Swagger UI:
 
@@ -1697,7 +1698,7 @@ These infrastructure endpoints are not prefixed with `/api/v1`.
 
 ---
 
-# 17. Final API Design Decisions
+## 17. Final API Design Decisions
 
 1. The application API is versioned under `/api/v1`.
 2. Springdoc/Swagger and Actuator infrastructure endpoints remain outside the API base path.

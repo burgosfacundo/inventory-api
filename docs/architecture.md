@@ -197,7 +197,7 @@ This structure keeps each business capability cohesive while still making techni
 
 ## 5. Layer Responsibilities
 
-## 5.1 Controllers
+### 5.1 Controllers
 
 Controllers define the HTTP boundary.
 
@@ -247,7 +247,7 @@ This allows application endpoints to be versioned without accidentally prefixing
 
 ---
 
-## 5.2 Application Services
+### 5.2 Application Services
 
 Services implement use cases and transaction boundaries.
 
@@ -278,7 +278,7 @@ Service interfaces are used as application contracts and implemented by Spring-m
 
 ---
 
-## 5.3 Domain Models
+### 5.3 Domain Models
 
 Domain models represent persisted business concepts and protect local invariants.
 
@@ -314,7 +314,7 @@ Examples of invariants enforced close to the model:
 
 ---
 
-## 5.4 Repositories
+### 5.4 Repositories
 
 Repositories use Spring Data JPA.
 
@@ -348,7 +348,7 @@ Foreign keys use restrictive deletion behavior for historical and referential in
 
 ---
 
-## 5.5 DTOs and Mappers
+### 5.5 DTOs and Mappers
 
 Persistence entities are not exposed directly through HTTP controllers.
 
@@ -393,7 +393,9 @@ InventoryMovementMapper
 StockTransferMapper
 ```
 
-Feature summary DTOs are owned by the feature they summarize, such as:
+Summary DTOs are kept close to the response contract that owns or uses them.
+
+Examples:
 
 ```text
 ProductSummaryResponse
@@ -401,6 +403,8 @@ WarehouseSummaryResponse
 CategorySummaryResponse
 SupplierSummaryResponse
 ```
+
+`SupplierSummaryResponse` belongs to the `product_supplier` DTO package because it is part of the `ProductSupplierResponse` contract.
 
 ---
 
@@ -673,7 +677,7 @@ BEGIN TRANSACTION
 3. Load destination Warehouse
 4. Reject same source/destination
 5. Determine warehouse lock order
-6. Lock both stock positions in deterministic warehouse-id order
+6. Perform both pessimistic stock lookups in deterministic warehouse-id order
 7. Require source Stock
 8. Decrease source Stock
 9. Increase destination Stock
@@ -1398,7 +1402,7 @@ The following architectural decisions define version 1:
 16. Inventory movement creation and stock modification are transactional.
 17. Stock transfers are first-class historical entities.
 18. Transfers modify both warehouse stocks and create matching `OUT`/`IN` movements in one transaction.
-19. Pessimistic database locking protects stock-changing operations.
+19. Pessimistic database locking is used for stock lookups during stock-changing operations.
 20. Stock transfers acquire locks in deterministic warehouse-id order.
 21. Database constraints remain the authoritative integrity layer.
 22. Warehouse addresses are embedded Value Objects.

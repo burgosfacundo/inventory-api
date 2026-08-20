@@ -673,7 +673,7 @@ This allows the repository to be evaluated without external credentials or netwo
 The application shall expose a versioned JSON REST API under `/api/v1`.
 
 **NFR-002 — Database**  
-Persistent data shall be stored in MySQL 8.
+Persistent data shall be stored in MySQL 8.4.
 
 **NFR-003 — Database migrations**  
 Database schema changes shall be managed with Flyway migrations.
