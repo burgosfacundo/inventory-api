@@ -1,47 +1,52 @@
 # Inventory API
 
-REST API for inventory, warehouse and stock management built with Java and Spring Boot.
+Production-oriented REST API for managing products, suppliers, warehouses and inventory across multiple physical locations.
 
 [![CI](https://github.com/burgosfacundo/inventory-api/actions/workflows/ci.yml/badge.svg)](https://github.com/burgosfacundo/inventory-api/actions/workflows/ci.yml)
 
-> 🚧 **Status:** In development
+> ✅ **Status: Version 1 complete**
 
-The goal of this project is to model real-world inventory operations while applying production-oriented backend practices such as clean separation of responsibilities, database migrations, automated testing, containerization and API documentation.
+Inventory API is a portfolio backend built with **Java 25 and Spring Boot 4.1**. It goes beyond CRUD by modeling transactional stock movements, warehouse transfers, concurrency control, external address validation, database migrations, integration testing with a real MySQL instance, containerized demo execution, OpenAPI documentation and automated CI quality checks.
 
 ---
 
-## 🎯 Project Goals
+## ✨ Highlights
 
-Inventory API manages:
-
-- Products and categories
-- Suppliers and product-supplier relationships
-- Multiple warehouses
-- Stock per product and warehouse
-- Stock movement history
+- Product and category management
+- Supplier management
+- Product-supplier relationships with purchase prices
+- Multiple warehouses with validated addresses
+- Stock tracked independently per product and warehouse
+- Traceable `IN` and `OUT` inventory movements
 - Low-stock monitoring
-- Warehouse address validation through an external geocoding service
-
-The project intentionally goes beyond a basic CRUD API.
-
-Stock quantities cannot be modified directly. Every stock change must be represented by a traceable inventory movement.
+- Transactional stock transfers between warehouses
+- Pessimistic locking for concurrent stock-changing operations
+- Flyway-managed MySQL schema
+- Geoapify address validation behind an application abstraction
+- Zero-configuration Docker demo without Geoapify credentials
+- OpenAPI / Swagger UI
+- Spring Boot Actuator health and info endpoints
+- Unit, controller, repository and API integration tests
+- Testcontainers with real MySQL
+- JaCoCo coverage enforcement
+- GitHub Actions CI
 
 ---
 
 ## 🧩 Domain Model
 
-The main domain includes:
+Main domain concepts:
 
-- `Product`
 - `Category`
+- `Product`
 - `Supplier`
 - `ProductSupplier`
 - `Warehouse`
 - `Address` — Value Object
 - `Stock`
 - `InventoryMovement`
-- `StockTransfer`
 - `MovementType`
+- `StockTransfer`
 
 ### UML
 
@@ -51,9 +56,13 @@ The main domain includes:
 
 ## 🏗️ Architecture
 
-The application is designed as a **modular monolith** using a feature-oriented package structure.
+The application is a **modular monolith** organized by feature under:
 
-Main dependency flow:
+```text
+com.burgosfacundo.inventory
+```
+
+Main request flow:
 
 ```text
 Controller
@@ -65,72 +74,83 @@ Repository
 MySQL
 ```
 
-External integrations are accessed through application abstractions:
+Each feature groups its own controllers, DTOs, models, mappers, repositories, services and exceptions.
+
+External address validation follows the same dependency direction:
 
 ```text
 WarehouseService
        ↓
-GeocodingService
+AddressValidator
        ↑
-Geoapify Adapter
+GeoapifyAddressValidator
+DemoAddressValidator
 ```
 
-This keeps business logic independent from the external geocoding provider.
+`WarehouseService` depends on the application abstraction, not directly on Geoapify.
+
+Stock-changing operations are handled transactionally. Inventory movements use pessimistic row locking, while stock transfers acquire stock locks in deterministic warehouse-ID order to reduce concurrency issues and deadlock risk.
+
+For the complete design, see [Architecture](docs/architecture.md).
 
 ---
 
-## 📦 Main Business Rules
-
-Some of the core rules modeled by the API are:
+## 📦 Core Business Rules
 
 - Product SKU must be unique.
 - Supplier email must be unique.
 - Warehouse code must be unique.
+- A product-supplier pair may exist only once.
 - Stock is unique per `Product + Warehouse`.
-- Stock can never become negative.
-- Stock quantity cannot be modified directly.
-- Every stock change generates a traceable `InventoryMovement`.
-- Outbound movements are rejected when stock is insufficient.
-- The first inbound movement automatically creates the stock record.
-- Manual stock adjustments require a reason.
-- Stock update and movement registration occur atomically.
-- Warehouse addresses must be validated before persistence.
-- Physical deletion is rejected when it would destroy historical integrity.
+- Stock quantity and minimum stock cannot be negative.
+- Stock quantity is not modified through a generic stock update endpoint.
+- `IN` movements increase stock.
+- The first valid `IN` movement creates the stock record automatically when necessary with `minimumStock = 0`.
+- `OUT` movements require existing and sufficient stock.
+- Inventory movement creation and stock modification occur atomically.
+- Stock transfers require different source and destination warehouses.
+- A successful transfer decreases source stock, increases destination stock, stores a `StockTransfer` and creates matching `OUT` and `IN` inventory movements in one transaction.
+- Warehouse addresses are validated through `AddressValidator` before persistence.
+- Database unique constraints, foreign keys and check constraints provide the final integrity layer.
+- Physical deletion is subject to database referential integrity.
 
 ---
 
-## 🛠️ Planned Tech Stack
+## 🛠️ Tech Stack
 
 ### Backend
 
-- Java
-- Spring Boot
-- Spring Web
+- Java 25
+- Spring Boot 4.1
+- Spring MVC
 - Spring Data JPA
 - Hibernate
 - Jakarta Bean Validation
 - Maven
+- Lombok
 
 ### Database
 
-- MySQL 8
+- MySQL 8.4
 - Flyway
 
-### Testing
+### Testing & Quality
 
-- JUnit 5
+- JUnit
 - Mockito
-- AssertJ
+- Spring MVC Test
 - Testcontainers
 - REST Assured
 - JaCoCo
+- Maven Surefire
+- Maven Failsafe
 
 ### API & Infrastructure
 
-- OpenAPI / Swagger
+- OpenAPI / Swagger UI
+- Spring Boot Actuator
 - Docker
 - Docker Compose
-- Spring Boot Actuator
 - GitHub Actions
 
 ### External Integration
@@ -139,20 +159,9 @@ Some of the core rules modeled by the API are:
 
 ---
 
-## 📚 Documentation
-
-Project design documentation is available under [`docs/`](docs)
-
-- [Requirements](docs/requirements.md)
-- [API Design](docs/api-design.md)
-- [Architecture](docs/architecture.md)
-- [Domain Model](docs/diagrams/inventory-domain.jpg)
-
----
-
 ## 🌐 API
 
-The API is versioned under:
+All application endpoints are versioned under:
 
 ```text
 /api/v1
@@ -171,184 +180,147 @@ Main resources:
 /api/v1/stock-transfers
 ```
 
-### Interactive API documentation
+### API documentation
 
-After starting the application, the API can be explored directly through Swagger UI:
+After starting the application:
 
-```text
-http://localhost:8080/swagger-ui.html
-```
+| Resource | URL |
+|---|---|
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| OpenAPI YAML | http://localhost:8080/v3/api-docs.yaml |
+| Health | http://localhost:8080/actuator/health |
+| Application info | http://localhost:8080/actuator/info |
 
-OpenAPI specification:
+Swagger UI is the recommended way to explore and execute requests against the API.
 
-```text
-http://localhost:8080/v3/api-docs
-http://localhost:8080/v3/api-docs.yaml
-```
-
-Operational endpoints:
-
-```text
-http://localhost:8080/actuator/health
-http://localhost:8080/actuator/info
-```
-
-The complete design documentation is also available in:
-
-[API Design](docs/api-design.md)
+The complete HTTP contract is also documented in [API Design](docs/api-design.md).
 
 ---
 
-## 🧪 Testing Strategy
+## 🔄 Inventory Operations
 
-The project uses different testing levels:
+### Register an inbound movement
 
-- **Unit tests** for business rules and services
-- **Controller tests** for HTTP contracts, validation and error responses
-- **Repository integration tests** using a real MySQL container
-- **API integration tests** using REST Assured
-- **Infrastructure integration tests** for OpenAPI and Actuator endpoints
-- **External service isolation** for Geoapify-related application tests
-
-Integration tests use **Testcontainers with MySQL** instead of an in-memory database.
-
-### Running tests
-
-Run the regular test suite:
-
-```bash
-mvn test
+```http
+POST /api/v1/inventory-movements
+Content-Type: application/json
 ```
 
-Run the complete verification lifecycle:
-
-```bash
-mvn verify
+```json
+{
+  "productId": 1,
+  "warehouseId": 1,
+  "type": "IN",
+  "quantity": 20
+}
 ```
 
-`mvn test` executes the regular `*Test` suite through Maven Surefire.
+### Register an outbound movement
 
-`mvn verify` performs the complete project verification:
-
-- runs the regular Surefire test suite
-- runs `*IT` integration tests through Maven Failsafe
-- starts MySQL integration environments with Testcontainers
-- generates combined JaCoCo coverage from regular and integration tests
-- validates the configured coverage thresholds
-
-Docker must be running to execute the complete integration test suite locally.
-
-### Code coverage
-
-JaCoCo collects coverage from both regular tests and integration tests and merges the results into a single report.
-
-The generated HTML report is available at:
-
-```text
-target/site/jacoco/index.html
+```json
+{
+  "productId": 1,
+  "warehouseId": 1,
+  "type": "OUT",
+  "quantity": 5
+}
 ```
 
-The build enforces the following minimum project-wide coverage:
+If available stock is insufficient, the operation is rejected and stock remains unchanged.
 
-- **Line coverage:** 90%
-- **Branch coverage:** 80%
+### Transfer stock between warehouses
 
-If either threshold is not met, the Maven `verify` phase fails.
+```http
+POST /api/v1/stock-transfers
+Content-Type: application/json
+```
 
-### Continuous Integration
+```json
+{
+  "productId": 1,
+  "sourceWarehouseId": 1,
+  "destinationWarehouseId": 2,
+  "quantity": 5
+}
+```
 
-GitHub Actions automatically runs the complete verification pipeline:
+A successful transfer atomically:
 
-- on pull requests targeting `main`
-- on pushes to `main`
-
-The CI workflow:
-
-- runs on Ubuntu
-- configures Eclipse Temurin Java 25
-- caches Maven dependencies
-- executes `mvn --batch-mode verify`
-- runs Testcontainers-based MySQL integration tests
-- validates the JaCoCo coverage thresholds
-- uploads the generated JaCoCo HTML report as a workflow artifact
-
-This ensures that the project is validated in a clean environment independently from the developer machine.
+1. decreases source stock
+2. increases or creates destination stock
+3. stores an `OUT` inventory movement
+4. stores an `IN` inventory movement
+5. stores the `StockTransfer`
 
 ---
 
-## 🐳 Local Development with Docker
+## ⚠️ Error Handling
+
+The API uses Spring `ProblemDetail` and returns errors as:
+
+```text
+application/problem+json
+```
+
+Application error responses include an `errorCode` extension.
+
+Example:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Insufficient stock. Available: 3, requested: 5",
+  "instance": "/api/v1/inventory-movements",
+  "errorCode": "INSUFFICIENT_STOCK"
+}
+```
+
+The centralized exception layer handles validation errors, malformed requests, missing resources, conflicts, address-validation failures, external-service failures and unexpected server errors.
+
+---
+
+## 🐳 Quick Start — Docker Demo
 
 ### Requirements
 
 - Docker
 - Docker Compose
 
-### Zero-configuration demo
-
-The Docker environment uses the `demo` Spring profile and does not require a Geoapify API key or any other external credentials.
-
-Can clone the repository and start the complete environment directly:
+Clone the repository and start the complete environment:
 
 ```bash
+git clone https://github.com/burgosfacundo/inventory-api.git
+cd inventory-api
 docker compose up --build
 ```
 
-No `.env` file is required for the demo environment.
-
-The demo profile uses an offline `AddressValidator` implementation for Warehouse creation and updates, so no external HTTP request is made to Geoapify. Demo addresses keep the submitted address data and use placeholder coordinates.
-
-Real Geoapify address validation remains available when running the application outside the `demo` profile. In that case, configure the required Geoapify variables using `.env.example` as a reference.
-
-### Start the application
-
-Run:
-
-```bash
-docker compose up --build
-```
-
-Docker Compose starts:
+The Docker environment starts:
 
 - Inventory API
 - MySQL 8.4
 
-The application is available at:
+The application becomes available at:
 
 ```text
 http://localhost:8080
 ```
 
-Useful URLs:
+### Zero-configuration demo
 
-| Resource | URL |
-|---|---|
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| OpenAPI JSON | http://localhost:8080/v3/api-docs |
-| API base path | http://localhost:8080/api/v1 |
-| Health | http://localhost:8080/actuator/health |
-| Application info | http://localhost:8080/actuator/info |
+Docker activates the Spring `demo` profile.
 
-Swagger UI is the recommended way to explore and execute requests against the demo API.
+No Geoapify API key or `.env` file is required.
 
-Both the API and MySQL containers include health checks.
+In demo mode:
 
-The API waits until MySQL is healthy before starting.
-
-### Demo environment
-
-The Docker environment activates the `demo` Spring profile.
-
-In this profile:
-
-- Geoapify is not required.
-- Warehouse address validation runs locally without external HTTP calls.
-- Address coordinates are placeholders intended only for demo/portfolio evaluation.
-
-Flyway automatically:
-
-1. Creates the database schema.
-2. Applies all versioned migrations.
-3. Loads representative demo data.
+- warehouse address validation runs locally through `DemoAddressValidator`
+- no external Geoapify HTTP request is made
+- submitted address data is preserved
+- placeholder coordinates are used
+- Flyway loads representative demo data
 
 The demo dataset includes:
 
@@ -361,31 +333,136 @@ The demo dataset includes:
 - Inventory movements
 - Stock transfers
 
-This allows the API to be explored immediately after startup.
+This makes the API immediately explorable through Swagger UI.
 
-### Stop the application
+### Stop the environment
 
 ```bash
 docker compose down
 ```
 
-To also remove the MySQL persistent volume:
+To also remove the MySQL volume and recreate the database from scratch on the next start:
 
 ```bash
 docker compose down -v
 ```
 
-A subsequent:
+---
 
-```bash
-docker compose up --build
-```
+## 🌍 Running with Geoapify
 
-will recreate the database from scratch using Flyway.
+Outside the `demo` profile, warehouse creation and updates use the real Geoapify-backed `AddressValidator`.
+
+Use `.env.example` as the reference for the required configuration.
+
+The integration validates Geoapify results before creating the application's `Address` Value Object and rejects unresolved or insufficient-confidence addresses.
 
 ---
 
-## 🗺️ Roadmap
+## 🧪 Testing Strategy
+
+The test suite is divided by responsibility.
+
+- **Domain and unit tests** verify local business rules.
+- **Service tests** verify application orchestration and business behavior.
+- **Controller tests** verify HTTP contracts, validation and error responses.
+- **Repository integration tests** verify JPA behavior and database constraints against MySQL.
+- **Transaction integration tests** verify stock consistency and rollback behavior.
+- **API integration tests** use REST Assured against the running application.
+- **Infrastructure integration tests** verify OpenAPI, Swagger and Actuator endpoints.
+
+Integration tests use **Testcontainers with MySQL**, not an in-memory substitute.
+
+### Maven lifecycle
+
+Run the regular `*Test` suite through Surefire:
+
+```bash
+mvn test
+```
+
+Run the complete project verification:
+
+```bash
+mvn verify
+```
+
+`mvn verify` includes:
+
+- regular tests through Maven Surefire
+- `*IT` integration tests through Maven Failsafe
+- Testcontainers-based MySQL integration tests
+- combined JaCoCo coverage
+- coverage threshold validation
+
+Docker must be running for the complete integration test suite locally.
+
+---
+
+## 📊 Code Coverage
+
+JaCoCo combines coverage from regular tests and integration tests.
+
+HTML report:
+
+```text
+target/site/jacoco/index.html
+```
+
+The build enforces these project-wide minimums:
+
+- **Line coverage:** 90%
+- **Branch coverage:** 80%
+
+If either threshold is not met, `mvn verify` fails.
+
+Coverage is treated as a quality guard, not as a substitute for meaningful tests.
+
+---
+
+## 🔁 Continuous Integration
+
+GitHub Actions automatically validates:
+
+```text
+pull requests → main
+pushes → main
+```
+
+The CI pipeline:
+
+```text
+Checkout repository
+        ↓
+Set up Eclipse Temurin Java 25
+        ↓
+Cache Maven dependencies
+        ↓
+mvn --batch-mode verify
+        ↓
+Upload JaCoCo HTML report
+```
+
+The workflow runs on Ubuntu and verifies the project independently from the developer environment.
+
+The JaCoCo HTML report is uploaded as a workflow artifact after the run.
+
+---
+
+## 📚 Documentation
+
+Detailed project documentation is available under [`docs/`](docs):
+
+- [Requirements](docs/requirements.md)
+- [API Design](docs/api-design.md)
+- [Architecture](docs/architecture.md)
+- [Domain Model](docs/diagrams/inventory-domain.jpg)
+
+The generated OpenAPI specification is the authoritative machine-readable HTTP contract.
+
+---
+
+## 🗺️ Version 1 Roadmap
 
 - [x] Domain modeling
 - [x] Functional and business requirements
@@ -393,7 +470,7 @@ will recreate the database from scratch using Flyway.
 - [x] Architecture definition
 - [x] Spring Boot project setup
 - [x] MySQL + Flyway configuration
-- [x] Product and Category implementation
+- [x] Product and Category management
 - [x] Supplier management
 - [x] Product-Supplier management
 - [x] Warehouse management
@@ -401,15 +478,16 @@ will recreate the database from scratch using Flyway.
 - [x] Stock management
 - [x] Inventory movements and transactional rules
 - [x] Warehouse stock transfers
-- [x] Unit tests
+- [x] Unit and controller tests
 - [x] Integration tests with Testcontainers
 - [x] REST API tests with REST Assured
 - [x] Docker Compose
-- [x] Docker demo environment
+- [x] Zero-configuration Docker demo
 - [x] OpenAPI / Swagger documentation
+- [x] Spring Boot Actuator
 - [x] GitHub Actions CI
-- [x] JaCoCo coverage
-- [ ] Final documentation review
+- [x] JaCoCo coverage enforcement
+- [x] Final documentation review
 
 ---
 
