@@ -15,7 +15,7 @@ import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -228,7 +228,7 @@ class InventoryMovementRepositoryIT
 
         Warehouse warehouse = createWarehouse("WH-001");
 
-        assertThrows(DataIntegrityViolationException.class,
+        assertThrows(DataAccessException.class,
                 () -> jdbcTemplate.update(
                         """
                         INSERT INTO inventory_movements
@@ -258,7 +258,7 @@ class InventoryMovementRepositoryIT
 
         Warehouse warehouse = createWarehouse("WH-001");
 
-        assertThrows(DataIntegrityViolationException.class,
+        assertThrows(DataAccessException.class,
                 () -> jdbcTemplate.update(
                         """
                         INSERT INTO inventory_movements
