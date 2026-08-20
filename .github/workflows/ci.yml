@@ -27,7 +27,7 @@ jobs:
           cache: maven
 
       - name: Verify with Maven
-        run: ./mvnw --batch-mode verify
+        run: mvn --batch-mode verify
 
       - name: Upload JaCoCo report
         if: always()
