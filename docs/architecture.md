@@ -2,26 +2,32 @@
 
 ## 1. Purpose
 
-This document describes the software architecture for version 1 of the Inventory API.
+This document describes the implemented software architecture of version 1 of Inventory API.
 
-The architecture is designed to keep the project:
+The project is designed as a production-oriented portfolio backend that keeps business rules explicit while remaining understandable and testable.
 
-- Easy to understand
-- Easy to test
-- Explicit about business rules
-- Decoupled from infrastructure details
-- Suitable for incremental evolution
-- Representative of professional Java / Spring Boot backend development
+The architecture favors:
 
-The project intentionally avoids unnecessary complexity such as microservices, event brokers, distributed transactions and Spring Security in version 1.
+- clear separation of responsibilities
+- feature-oriented organization
+- explicit transactional boundaries
+- database-backed integrity
+- replaceable external integrations
+- automated testing against real infrastructure
+- reproducible local execution with Docker
+- automated verification through CI
+
+The project intentionally remains a single deployable application rather than introducing microservices or distributed infrastructure.
 
 ---
 
-# 2. Architectural Style
+## 2. Architectural Style
 
-The application will be implemented as a **modular monolith** using Spring Boot.
+Inventory API is implemented as a **modular monolith** with Spring Boot.
 
-The codebase will follow a layered dependency flow:
+The application is deployed as one process, but code is grouped by business feature and then internally separated by responsibility.
+
+Typical request flow:
 
 ```text
 HTTP Client
@@ -32,465 +38,297 @@ Controller
     ▼
 Application Service
     │
-    ├──────────────► Repository
+    ├────────────► Repository
     │
-    └──────────────► External Service Interface
-                           │
-                           ▼
-                    Geoapify Adapter
+    ├────────────► Domain Model
+    │
+    └────────────► External Integration Abstraction
+                         │
+                         ▼
+                  External Adapter
 ```
 
-The application remains a single deployable unit, but responsibilities are separated by feature and layer.
+Persistence flow:
 
-This gives the project clear boundaries without introducing the operational complexity of microservices.
+```text
+Application Service
+        │
+        ▼
+Spring Data JPA Repository
+        │
+        ▼
+Hibernate
+        │
+        ▼
+MySQL
+```
 
----
-
-# 3. Main Architectural Principles
-
-## 3.1 Separation of Responsibilities
-
-Each layer has a specific responsibility:
-
-### Controller
-
-Responsible for:
-
-- Receiving HTTP requests
-- Validating request DTOs
-- Delegating operations to application services
-- Returning response DTOs
-- Selecting the appropriate HTTP status code
-
-Controllers must not contain business logic.
+Database schema evolution is owned by Flyway rather than Hibernate.
 
 ---
 
-### Application Service
+## 3. Technology Baseline
 
-Responsible for:
+The implemented application uses:
 
-- Implementing use cases
-- Enforcing business rules
-- Coordinating repositories
-- Coordinating external integrations
-- Defining transaction boundaries
-- Mapping domain errors to application exceptions when necessary
+### Runtime
+
+- Java 25
+- Spring Boot 4.1
+- Spring MVC
+- Spring Data JPA
+- Hibernate
+- Jakarta Bean Validation
+- Maven
+
+### Persistence
+
+- MySQL 8.4
+- Flyway
+
+### External integration
+
+- Spring REST client facilities
+- Geoapify
+
+### API documentation and operations
+
+- Springdoc OpenAPI
+- Swagger UI
+- Spring Boot Actuator
+
+### Testing
+
+- JUnit
+- Mockito
+- Spring MVC test support
+- Testcontainers
+- MySQL Testcontainer
+- REST Assured
+- JaCoCo
+
+### Delivery
+
+- Docker
+- Docker Compose
+- GitHub Actions
+
+---
+
+## 4. Root Package and Feature Structure
+
+The root Java package is:
+
+```text
+com.burgosfacundo.inventory
+```
+
+The application uses **package by feature**.
+
+Current top-level feature structure:
+
+```text
+com.burgosfacundo.inventory
+│
+├── category
+├── common
+├── inventory_movement
+├── product
+├── product_supplier
+├── stock
+├── stock_transfer
+├── supplier
+└── warehouse
+```
+
+Business features generally contain responsibilities such as:
+
+```text
+controller
+dto
+exception
+mapper
+model
+repository
+service
+```
+
+For example:
+
+```text
+product
+├── controller
+├── dto
+├── exception
+├── mapper
+├── model
+├── repository
+└── service
+```
+
+Warehouse additionally contains integration-specific code:
+
+```text
+warehouse
+├── controller
+├── dto
+├── exception
+├── integration
+│   ├── demo
+│   └── geoapify
+├── mapper
+├── model
+├── repository
+└── service
+```
+
+Shared cross-cutting concerns are grouped under:
+
+```text
+common
+├── config
+├── exception
+└── web
+```
+
+This structure keeps each business capability cohesive while still making technical responsibilities easy to identify.
+
+---
+
+## 5. Layer Responsibilities
+
+## 5.1 Controllers
+
+Controllers define the HTTP boundary.
+
+Responsibilities include:
+
+- receiving HTTP requests
+- validating request DTOs
+- validating path/query parameters
+- constructing pagination and sorting inputs
+- delegating use cases to services
+- selecting HTTP status codes
+- returning response DTOs
+
+Controllers do not contain persistence logic.
 
 Examples:
 
 ```text
-Create product
-Update warehouse address
-Register stock movement
-Deactivate supplier
-Physically delete product
+ProductController
+InventoryMovementController
+StockTransferController
 ```
 
----
+The API base path is not repeated in every controller.
 
-### Repository
-
-Responsible for:
-
-- Persisting and retrieving domain entities
-- Executing database queries
-- Applying locking strategies when required
-
-Repositories will be Spring Data JPA interfaces.
-
----
-
-### Domain Model
-
-Responsible for representing the core business concepts:
+Controllers declare feature-relative mappings such as:
 
 ```text
-Product
+/products
+/inventory-movements
+/stock-transfers
+```
+
+`WebConfig` applies the configured:
+
+```text
+/api/v1
+```
+
+prefix only to application `@RestController` classes inside:
+
+```text
+com.burgosfacundo.inventory
+```
+
+This allows application endpoints to be versioned without accidentally prefixing Springdoc or Actuator infrastructure endpoints.
+
+---
+
+## 5.2 Application Services
+
+Services implement use cases and transaction boundaries.
+
+Responsibilities include:
+
+- loading required domain objects
+- enforcing cross-entity business rules
+- checking uniqueness when useful for application-level error messages
+- coordinating repositories
+- invoking external abstractions
+- creating and updating domain objects
+- defining read-only and read-write transactions
+- mapping entities to response DTOs
+
+Examples:
+
+```text
+ProductService
+SupplierService
+WarehouseService
+StockService
+InventoryMovementService
+StockTransferService
+ProductSupplierService
+```
+
+Service interfaces are used as application contracts and implemented by Spring-managed service classes.
+
+---
+
+## 5.3 Domain Models
+
+Domain models represent persisted business concepts and protect local invariants.
+
+Main models:
+
+```text
 Category
+Product
 Supplier
 ProductSupplier
 Warehouse
 Address
 Stock
-StockMovement
+InventoryMovement
+StockTransfer
 MovementType
 ```
 
-Business invariants that naturally belong to an object should be kept close to that object.
+Examples of invariants enforced close to the model:
+
+- Product SKU cannot be blank.
+- Product sale price cannot be negative.
+- Supplier email must be present and valid.
+- Product-supplier purchase price cannot be negative.
+- Stock quantity cannot be negative.
+- Stock minimum cannot be negative.
+- Inventory movement quantity must be positive.
+- Inventory movement type is required.
+- Stock transfer quantity must be positive.
+- Transfer source and destination warehouses must differ.
+
+`Address` is an embedded Value Object owned by `Warehouse`.
 
 ---
 
-### External Integration Adapter
+## 5.4 Repositories
 
-Responsible for communicating with external systems.
+Repositories use Spring Data JPA.
 
-Version 1 contains one external integration:
+Responsibilities include:
 
-```text
-Geoapify
-```
+- entity persistence
+- entity retrieval
+- filtered queries
+- relationship fetching
+- database locking where required
 
-The rest of the application must not depend directly on Geoapify-specific classes or response formats.
+Database constraints remain the final integrity layer even when services perform pre-checks.
 
----
-
-# 4. Dependency Direction
-
-Dependencies should point toward application/domain abstractions rather than toward concrete infrastructure implementations.
-
-Example:
-
-```text
-WarehouseController
-        │
-        ▼
-WarehouseService
-   <<interface>>
-        ▲
-        │ implements
-WarehouseServiceImpl
-        │
-        ├────────► WarehouseRepository
-        │
-        ▼
-GeocodingService
-   <<interface>>
-        ▲
-        │ implements
-GeoapifyGeocodingService
-```
-
-`WarehouseServiceImpl` knows that an address must be validated and normalized.
-
-It does **not** need to know how Geoapify's HTTP API works.
-
-This allows the external provider to be replaced without modifying the warehouse use-case logic.
-
----
-
-# 5. Package Structure
-
-The project will use **package by feature**, with internal separation of responsibilities.
-
-Proposed structure:
-
-```text
-com.example.inventory
-│
-├── common
-│   ├── exception
-│   ├── web
-│   └── config
-│
-├── product
-│   ├── controller
-│   ├── dto
-│   ├── entity
-│   ├── mapper
-│   ├── repository
-│   └── service
-│
-├── category
-│   ├── controller
-│   ├── dto
-│   ├── entity
-│   ├── mapper
-│   ├── repository
-│   └── service
-│
-├── supplier
-│   ├── controller
-│   ├── dto
-│   ├── entity
-│   ├── mapper
-│   ├── repository
-│   └── service
-│
-├── warehouse
-│   ├── controller
-│   ├── dto
-│   ├── entity
-│   ├── mapper
-│   ├── repository
-│   └── service
-│
-├── inventory
-│   ├── controller
-│   ├── dto
-│   ├── entity
-│   ├── mapper
-│   ├── repository
-│   └── service
-│
-└── geocoding
-    ├── client
-    ├── dto
-    ├── config
-    └── service
-```
-
-This structure is preferred over a single global:
-
-```text
-controller/
-service/
-repository/
-entity/
-```
-
-because each business capability remains grouped together as the project grows.
-
----
-
-# 6. Application Services
-
-Interfaces will be used when they define meaningful application contracts.
-
-They are not introduced simply to create an `Impl` class for every Java class.
-
-Initial service contracts:
-
-```text
-ProductService
-CategoryService
-SupplierService
-ProductSupplierService
-WarehouseService
-StockQueryService
-InventoryService
-GeocodingService
-```
-
----
-
-## 6.1 ProductService
-
-Responsibilities:
-
-- Create products
-- Retrieve products
-- List/filter products
-- Update products
-- Activate/deactivate products
-- Validate physical deletion rules
-- Physically delete products when allowed
-
-Implementation:
-
-```text
-ProductServiceImpl
-```
-
-Dependencies:
-
-```text
-ProductRepository
-CategoryRepository
-ProductMapper
-```
-
----
-
-## 6.2 CategoryService
-
-Responsibilities:
-
-- Create categories
-- Retrieve categories
-- List categories
-- Update categories
-
-Implementation:
-
-```text
-CategoryServiceImpl
-```
-
-Dependencies:
-
-```text
-CategoryRepository
-CategoryMapper
-```
-
----
-
-## 6.3 SupplierService
-
-Responsibilities:
-
-- Create suppliers
-- Retrieve/list suppliers
-- Update suppliers
-- Activate/deactivate suppliers
-- Validate physical deletion rules
-- Physically delete suppliers when allowed
-
-Implementation:
-
-```text
-SupplierServiceImpl
-```
-
-Dependencies:
-
-```text
-SupplierRepository
-SupplierMapper
-```
-
----
-
-## 6.4 ProductSupplierService
-
-Responsibilities:
-
-- Associate suppliers with products
-- Validate duplicate relationships
-- Update supplier-specific purchase price
-- List suppliers for a product
-- Remove product-supplier relationships when allowed
-
-Implementation:
-
-```text
-ProductSupplierServiceImpl
-```
-
-Dependencies:
-
-```text
-ProductRepository
-SupplierRepository
-ProductSupplierRepository
-```
-
----
-
-## 6.5 WarehouseService
-
-Responsibilities:
-
-- Create warehouses
-- Retrieve/list warehouses
-- Update warehouse metadata
-- Validate and update warehouse addresses
-- Activate/deactivate warehouses
-- Validate physical deletion rules
-- Physically delete warehouses when allowed
-
-Implementation:
-
-```text
-WarehouseServiceImpl
-```
-
-Dependencies:
-
-```text
-WarehouseRepository
-WarehouseMapper
-GeocodingService
-```
-
----
-
-## 6.6 StockQueryService
-
-`StockQueryService` is read-oriented.
-
-Responsibilities:
-
-- Retrieve stock by ID
-- Retrieve stock across warehouses for a product
-- Retrieve stock inside a warehouse
-- Retrieve low-stock records
-- Update minimum stock configuration
-
-Implementation:
-
-```text
-StockQueryServiceImpl
-```
-
-Dependencies:
-
-```text
-StockRepository
-StockMapper
-```
-
-Stock quantity itself is never directly changed by this service.
-
----
-
-## 6.7 InventoryService
-
-`InventoryService` contains the main inventory business logic.
-
-Responsibilities:
-
-- Register stock movements
-- Create stock automatically on first inbound movement
-- Validate available quantity for outbound movements
-- Modify stock quantity
-- Persist stock movement history
-- Guarantee transactional consistency
-
-Implementation:
-
-```text
-InventoryServiceImpl
-```
-
-Dependencies:
-
-```text
-ProductRepository
-WarehouseRepository
-StockRepository
-StockMovementRepository
-StockMovementMapper
-```
-
-This is one of the most important services in the application.
-
----
-
-# 7. Repository Layer
-
-Repositories will extend Spring Data JPA repository abstractions.
-
-Initial repositories:
-
-```text
-ProductRepository
-CategoryRepository
-SupplierRepository
-ProductSupplierRepository
-WarehouseRepository
-StockRepository
-StockMovementRepository
-```
-
-Typical examples:
-
-```java
-interface ProductRepository extends JpaRepository<Product, Long> {
-    boolean existsBySku(String sku);
-}
-```
-
-```java
-interface StockRepository extends JpaRepository<Stock, Long> {
-    Optional<Stock> findByProductIdAndWarehouseId(Long productId, Long warehouseId);
-}
-```
-
-Database constraints remain authoritative even when the application performs pre-checks.
-
-For example:
+Important database constraints include:
 
 ```text
 UNIQUE product.sku
@@ -498,30 +336,351 @@ UNIQUE supplier.email
 UNIQUE warehouse.code
 UNIQUE (product_id, supplier_id)
 UNIQUE (product_id, warehouse_id)
+CHECK stock.quantity >= 0
+CHECK stock.minimum_stock >= 0
+CHECK inventory_movement.quantity > 0
+CHECK inventory_movement.type IN ('IN', 'OUT')
+CHECK stock_transfer.quantity > 0
+CHECK source_warehouse_id <> destination_warehouse_id
 ```
 
-Application-level checks improve error messages.
-
-Database constraints guarantee integrity.
+Foreign keys use restrictive deletion behavior for historical and referential integrity.
 
 ---
 
-# 8. Stock Transaction Model
+## 5.5 DTOs and Mappers
 
-Registering a stock movement is an atomic operation.
+Persistence entities are not exposed directly through HTTP controllers.
+
+Request flow:
+
+```text
+JSON
+  │
+  ▼
+Request DTO
+  │
+  ▼
+Application Service
+  │
+  ▼
+Domain Model
+```
+
+Response flow:
+
+```text
+Domain Model
+  │
+  ▼
+Manual Mapper
+  │
+  ▼
+Response DTO
+  │
+  ▼
+JSON
+```
+
+The project intentionally uses explicit manual mappers.
+
+Examples:
+
+```text
+ProductMapper
+WarehouseMapper
+InventoryMovementMapper
+StockTransferMapper
+```
+
+Feature summary DTOs are owned by the feature they summarize, such as:
+
+```text
+ProductSummaryResponse
+WarehouseSummaryResponse
+CategorySummaryResponse
+SupplierSummaryResponse
+```
+
+---
+
+## 6. API Base Path Architecture
+
+Application endpoints are versioned through:
+
+```yaml
+api:
+  base-path: /api/v1
+```
+
+`WebConfig` applies the prefix programmatically to application REST controllers.
 
 Conceptually:
 
 ```text
+ProductController mapping:
+    /products
+
+WebConfig prefix:
+    /api/v1
+
+Final endpoint:
+    /api/v1/products
+```
+
+Infrastructure endpoints remain outside the application base path:
+
+```text
+/swagger-ui.html
+/v3/api-docs
+/v3/api-docs.yaml
+/actuator/health
+/actuator/info
+```
+
+Springdoc is configured to document only:
+
+```text
+/api/v1/**
+```
+
+---
+
+## 7. Persistence Architecture
+
+Database:
+
+```text
+MySQL 8.4
+```
+
+ORM:
+
+```text
+Spring Data JPA + Hibernate
+```
+
+Schema migration:
+
+```text
+Flyway
+```
+
+Hibernate configuration:
+
+```text
+ddl-auto = validate
+open-in-view = false
+```
+
+This means:
+
+- Flyway creates and evolves the schema.
+- Hibernate verifies that mappings match the schema.
+- HTTP serialization does not depend on an open persistence context.
+
+Current migration sequence includes tables for:
+
+```text
+categories
+products
+suppliers
+product_suppliers
+warehouses
+stocks
+inventory_movements
+stock_transfers
+```
+
+plus later schema evolution such as product-supplier purchase pricing.
+
+---
+
+## 8. Stock Model
+
+`Stock` represents the quantity of one product at one warehouse.
+
+Its identity is protected by:
+
+```text
+UNIQUE (product_id, warehouse_id)
+```
+
+Core mutable state:
+
+```text
+quantity
+minimumStock
+```
+
+Domain operations:
+
+```text
+increase(amount)
+decrease(amount)
+updateMinimumStock(value)
+```
+
+`increase` and `decrease` require a positive amount.
+
+`decrease` rejects requests greater than available stock.
+
+Low stock is derived as:
+
+```text
+quantity <= minimumStock
+```
+
+Stock quantity is not modified directly by a generic stock HTTP update.
+
+Quantity changes occur through:
+
+```text
+InventoryMovement
+StockTransfer
+```
+
+---
+
+## 9. Inventory Movement Transaction Model
+
+`InventoryMovement` represents a traceable stock change.
+
+Movement types:
+
+```text
+IN
+OUT
+```
+
+An inventory movement stores:
+
+```text
+Product
+Warehouse
+MovementType
+quantity
+createdAt
+```
+
+There is no `reason` field in the final version 1 model.
+
+### IN operation
+
+Conceptual flow:
+
+```text
 BEGIN TRANSACTION
 
-1. Validate Product
-2. Validate Warehouse
-3. Find Stock
-4. Create Stock if required and movement is inbound
-5. Validate quantity
-6. Modify Stock
-7. Save StockMovement
+1. Load Product
+2. Load Warehouse
+3. Lock existing Stock if present
+4. If Stock exists:
+      increase quantity
+   Else:
+      create Stock(quantity, minimumStock = 0)
+5. Persist InventoryMovement(IN)
+
+COMMIT
+```
+
+### OUT operation
+
+Conceptual flow:
+
+```text
+BEGIN TRANSACTION
+
+1. Load Product
+2. Load Warehouse
+3. Lock Stock
+4. Reject if Stock does not exist
+5. Reject if requested quantity exceeds available quantity
+6. Decrease Stock
+7. Persist InventoryMovement(OUT)
+
+COMMIT
+```
+
+Because the stock entity is managed inside the transaction, quantity changes use JPA dirty checking rather than unnecessary explicit saves.
+
+---
+
+## 10. Concurrency Control
+
+Stock-changing operations use pessimistic database locking.
+
+`StockRepository` exposes a query using:
+
+```text
+PESSIMISTIC_WRITE
+```
+
+for the pair:
+
+```text
+productId + warehouseId
+```
+
+This protects operations from concurrent lost updates.
+
+Example problem prevented:
+
+```text
+Current quantity = 5
+
+Request A -> OUT 4
+Request B -> OUT 4
+```
+
+Without serialized access, both requests could observe the same original quantity.
+
+With the locked stock row, operations are coordinated by the database transaction.
+
+The database constraint:
+
+```text
+quantity >= 0
+```
+
+provides an additional integrity layer.
+
+---
+
+## 11. Stock Transfer Architecture
+
+`StockTransfer` is a first-class historical entity.
+
+It records:
+
+```text
+Product
+sourceWarehouse
+destinationWarehouse
+quantity
+createdAt
+```
+
+The transfer service coordinates multiple stock records and inventory movements inside one transaction.
+
+Conceptual flow:
+
+```text
+BEGIN TRANSACTION
+
+1. Load Product
+2. Load source Warehouse
+3. Load destination Warehouse
+4. Reject same source/destination
+5. Determine warehouse lock order
+6. Lock both stock positions in deterministic warehouse-id order
+7. Require source Stock
+8. Decrease source Stock
+9. Increase destination Stock
+   or create destination Stock with minimumStock = 0
+10. Persist InventoryMovement(OUT, source)
+11. Persist InventoryMovement(IN, destination)
+12. Persist StockTransfer
 
 COMMIT
 ```
@@ -532,997 +691,726 @@ If any step fails:
 ROLLBACK
 ```
 
-The stock quantity and movement history must never become inconsistent.
-
-The application service method responsible for this use case will define the transaction boundary.
-
-Example:
-
-```java
-@Transactional
-public StockMovementResponse registerMovement(CreateStockMovementRequest request) {
-    ...
-}
-```
+This guarantees that a transfer cannot partially update one warehouse without updating the other or without recording its audit history.
 
 ---
 
-# 9. Concurrent Stock Updates
+## 12. Deterministic Lock Ordering
 
-Inventory operations can occur concurrently.
+Transfers may touch two warehouse stock records.
 
-Example:
-
-```text
-Current stock = 5
-
-Request A → SALE 4
-Request B → SALE 4
-```
-
-Without concurrency control, both requests could read `5` and both succeed.
-
-That would violate:
-
-```text
-stock >= 0
-```
-
-Version 1 will therefore use database-level concurrency protection when loading a stock record for modification.
-
-Recommended strategy:
-
-```text
-PESSIMISTIC_WRITE
-```
+To reduce deadlock risk, the implementation determines lock order using warehouse IDs.
 
 Conceptually:
 
-```java
-@Lock(LockModeType.PESSIMISTIC_WRITE)
-Optional<Stock> findForUpdate(...);
+```text
+firstWarehouseId  = min(sourceId, destinationId)
+secondWarehouseId = max(sourceId, destinationId)
 ```
 
-The lock is acquired inside the inventory transaction.
+The service locks in that order regardless of transfer direction.
 
-The unique database constraint on:
+It then maps those locked records back to:
 
 ```text
-(product_id, warehouse_id)
+source
+destination
 ```
 
-also protects against duplicate stock records.
-
-Concurrency behavior must be covered by integration tests where practical.
+This gives transfers a consistent lock acquisition order across concurrent requests.
 
 ---
 
-# 10. Warehouse Address Validation
+## 13. Warehouse and Address Architecture
 
-`Address` is a Value Object owned by `Warehouse`.
-
-It has no independent database identity.
+`Warehouse` owns an embedded `Address`.
 
 Conceptually:
 
 ```java
 @Entity
 class Warehouse {
-
     @Embedded
     private Address address;
 }
 ```
 
-```java
-@Embeddable
-class Address {
-    ...
-}
-```
-
-The application does not trust free-form geographic data directly.
-
-Address creation/update flow:
+The stored address includes:
 
 ```text
-HTTP Request
-    │
-    ▼
-WarehouseController
-    │
-    ▼
-WarehouseService
-    │
-    ▼
-GeocodingService
-    │
-    ▼
-GeoapifyGeocodingService
-    │
-    ▼
-Geoapify API
+street
+number
+postalCode
+city
+province
+countryCode
+latitude
+longitude
 ```
 
-Geoapify returns normalized geographic information.
+Warehouse creation and update do not construct persisted addresses directly from untrusted request data.
 
-That information is converted into the application's own `Address` Value Object.
-
----
-
-# 11. External Geocoding Abstraction
-
-The application-level abstraction:
+Instead they depend on:
 
 ```text
-GeocodingService
-<<interface>>
+AddressValidator
 ```
 
-Example contract:
+The application contract is:
 
 ```java
-Address validateAndNormalize(AddressInput input);
+Address validate(AddressRequest request);
 ```
 
-Infrastructure implementation:
-
-```text
-GeoapifyGeocodingService
-```
-
-The implementation is responsible for:
-
-- Building HTTP requests
-- Sending requests to Geoapify
-- Parsing provider-specific responses
-- Mapping those responses to application objects
-- Translating provider errors into application exceptions
-
-Possible exceptions:
-
-```text
-AddressNotResolvedException
-AddressProviderUnavailableException
-```
-
-No controller or business service should depend on Geoapify-specific DTOs.
+`WarehouseServiceImpl` depends on this abstraction rather than on Geoapify-specific classes.
 
 ---
 
-# 12. External Call and Transaction Boundaries
+## 14. External Address Validation
 
-External HTTP calls should not keep a database transaction open unnecessarily.
+The external integration is located inside the warehouse feature.
 
-Warehouse creation flow:
-
-```text
-1. Validate input
-2. Call Geoapify
-3. Obtain normalized Address
-4. Persist Warehouse
-```
-
-Warehouse address update flow:
+Structure:
 
 ```text
-1. Validate input
-2. Call Geoapify
-3. Obtain normalized Address
-4. Update existing Warehouse
+warehouse.integration
+├── geoapify
+└── demo
 ```
 
-If Geoapify fails:
+### Normal profile
+
+For profiles other than `demo`:
 
 ```text
-No database update occurs.
+GeoapifyAddressValidator
 ```
 
-This avoids holding database locks while waiting for an external network service.
-
-Stock operations are different: they require a database transaction because multiple persistence operations must remain atomic.
-
----
-
-# 13. HTTP Client
-
-Geoapify communication will use Spring's HTTP client facilities.
-
-The provider URL and API key must be externalized:
+implements:
 
 ```text
-GEOAPIFY_BASE_URL
-GEOAPIFY_API_KEY
+AddressValidator
 ```
-
-Secrets must never be committed to Git.
-
-The repository will include:
-
-```text
-.env.example
-```
-
-with placeholder values only.
-
----
-
-# 14. DTO Boundary
-
-Persistence entities must never be exposed directly through controllers.
 
 Flow:
 
 ```text
-Request JSON
-    │
-    ▼
-Request DTO
-    │
-    ▼
-Application Service
-    │
-    ▼
-Domain Entity
-    │
-    ▼
-Repository
+WarehouseService
+      │
+      ▼
+AddressValidator
+      │
+      ▼
+GeoapifyAddressValidator
+      │
+      ▼
+GeoapifyClient
+      │
+      ▼
+Geoapify HTTP API
 ```
 
-Response flow:
+The adapter:
 
-```text
-Domain Entity
-    │
-    ▼
-Mapper
-    │
-    ▼
-Response DTO
-    │
-    ▼
-JSON
-```
+- calls Geoapify
+- validates that a result exists
+- validates required provider fields
+- validates minimum confidence
+- normalizes available address information
+- falls back to submitted postal code/province when appropriate
+- converts the provider result into the application's `Address`
 
-Benefits:
+Geoapify-specific DTOs remain inside the integration package.
 
-- Persistence implementation is hidden from API clients
-- API contracts can evolve independently from entities
-- Sensitive/internal fields are not accidentally exposed
-- Validation belongs at the API boundary
-- Serialization problems with JPA relationships are avoided
+The rest of the application does not depend on them.
 
 ---
 
-# 15. Mapping Strategy
+## 15. Demo Address Adapter
 
-Version 1 will use explicit mapper classes rather than exposing entities directly.
-
-Examples:
+Docker execution activates:
 
 ```text
-ProductMapper
-CategoryMapper
-SupplierMapper
-WarehouseMapper
-StockMapper
-StockMovementMapper
+demo
 ```
 
-Initial implementation can use manual mapping.
+In this profile:
 
-This keeps the project transparent while reviewing Java fundamentals.
+```text
+DemoAddressValidator
+```
 
-A mapping library such as MapStruct may be evaluated in a later project.
+implements the same:
+
+```text
+AddressValidator
+```
+
+contract.
+
+The demo implementation:
+
+- uses submitted address fields
+- normalizes country code to uppercase
+- uses placeholder coordinates
+- performs no external HTTP request
+
+This allows the complete application to run without a Geoapify API key.
+
+The architectural point is that Warehouse does not know which validator implementation is active.
+
+Spring profile selection chooses the adapter.
 
 ---
 
-# 16. Validation Strategy
+## 16. External Call and Transaction Considerations
 
-Validation is divided into two categories.
+Warehouse creation/update performs address validation before applying the persisted warehouse state.
 
-## 16.1 Structural Validation
+Conceptual flow:
 
-Handled at DTO level using Jakarta Bean Validation.
+```text
+1. Validate request DTO
+2. Check warehouse business constraints
+3. Invoke AddressValidator
+4. Obtain validated Address
+5. Create/update Warehouse
+6. Persist transaction
+```
+
+If validation fails:
+
+```text
+no valid warehouse change is committed
+```
+
+Stock operations differ because they require transactional coordination and locking across database state.
+
+---
+
+## 17. Validation Architecture
+
+Validation occurs at multiple levels.
+
+### HTTP boundary
+
+Jakarta Bean Validation handles structural input requirements.
 
 Examples:
 
 ```text
 @NotBlank
 @NotNull
-@Email
 @Positive
 @PositiveOrZero
 @Size
+@Email
+@Max
 ```
+
+### Domain model
+
+Entities validate invariants that must hold regardless of caller.
 
 Examples:
 
 ```text
-Product name cannot be blank.
-Movement quantity must be greater than zero.
-Supplier email must have a valid format.
+quantity > 0
+price >= 0
+required Product
+required Warehouse
+different transfer warehouses
 ```
 
----
+### Application service
 
-## 16.2 Business Validation
-
-Handled by application services.
+Services enforce cross-entity rules.
 
 Examples:
 
 ```text
-SKU must be unique.
-Supplier email must be unique.
-Product must exist.
-Warehouse must exist.
-Stock must be sufficient.
-Adjustment reason is mandatory.
-Physical deletion must preserve history.
-Address must be externally validated.
+SKU uniqueness
+supplier email uniqueness
+referenced category existence
+referenced warehouse existence
+stock availability
+valid date ranges
 ```
 
-Database constraints provide a final integrity layer.
+### Database
+
+MySQL enforces final integrity through:
+
+```text
+PRIMARY KEY
+FOREIGN KEY
+UNIQUE
+CHECK
+NOT NULL
+```
+
+The layers complement each other rather than replacing each other.
 
 ---
 
-# 17. Exception Handling
+## 18. Exception Architecture
 
-Controllers should not individually construct error responses.
+Domain- and feature-specific exceptions are translated centrally.
 
-A global exception handler will centralize HTTP error mapping.
-
-Proposed component:
+The application uses a shared exception hierarchy with categories corresponding to HTTP semantics, including:
 
 ```text
-GlobalExceptionHandler
+BadRequestException
+ResourceNotFoundException
+ConflictException
+UnprocessableContentException
+ServiceUnavailableException
+```
+
+`GlobalExceptionHandler` is implemented with:
+
+```text
 @RestControllerAdvice
 ```
 
-It will convert application exceptions into `ProblemDetail`.
+and maps application failures to Spring `ProblemDetail`.
 
-Examples:
-
-```text
-ProductNotFoundException
-        ↓
-404 Not Found
-```
+Common mappings:
 
 ```text
-DuplicateSkuException
-        ↓
-409 Conflict
+400 -> validation / malformed request / bad request
+404 -> missing resources
+409 -> conflicts and insufficient stock
+422 -> unresolved/invalid external address result
+503 -> external service unavailable
+500 -> unexpected server error
 ```
+
+The response includes:
 
 ```text
-InsufficientStockException
-        ↓
-409 Conflict
+errorCode
 ```
+
+as a custom extension.
+
+Request-body field validation errors also include:
 
 ```text
-AddressNotResolvedException
-        ↓
-422 Unprocessable Entity
+fieldErrors
 ```
+
+and method/query/path validation errors may include:
 
 ```text
-AddressProviderUnavailableException
-        ↓
-503 Service Unavailable
+errors
 ```
 
-Bean Validation failures:
-
-```text
-MethodArgumentNotValidException
-        ↓
-400 Bad Request
-```
+Controllers therefore do not duplicate error response construction.
 
 ---
 
-# 18. Database Architecture
+## 19. OpenAPI Architecture
 
-Database:
+Springdoc generates the machine-readable API contract from the application.
 
-```text
-MySQL 8
-```
-
-ORM:
-
-```text
-Spring Data JPA / Hibernate
-```
-
-Schema migrations:
-
-```text
-Flyway
-```
-
-Hibernate must not be responsible for production schema evolution.
-
-Recommended configuration:
-
-```text
-ddl-auto = validate
-```
-
-Flyway migrations define the schema.
-
-Example migration structure:
-
-```text
-src/main/resources/db/migration/
-
-V1__create_categories.sql
-V2__create_products.sql
-V3__create_suppliers.sql
-V4__create_product_suppliers.sql
-V5__create_warehouses.sql
-V6__create_stocks.sql
-V7__create_stock_movements.sql
-V8__add_indexes.sql
-```
-
-The final migration order may change during implementation.
-
----
-
-# 19. Database Indexes
-
-Indexes should support both integrity and common query patterns.
-
-Initial candidates:
-
-```text
-products.sku                          UNIQUE
-suppliers.email                      UNIQUE
-warehouses.code                      UNIQUE
-
-product_suppliers(product_id,
-                  supplier_id)       UNIQUE
-
-stocks(product_id,
-       warehouse_id)                 UNIQUE
-
-products.category_id                 INDEX
-
-stocks.warehouse_id                  INDEX
-stocks.product_id                    INDEX
-
-stock_movements.stock_id             INDEX
-stock_movements.created_at           INDEX
-stock_movements.type                 INDEX
-```
-
-Indexes will be reviewed against actual repository queries.
-
----
-
-# 20. Testing Architecture
-
-The test suite will contain multiple levels.
-
-## 20.1 Unit Tests
-
-Tools:
-
-```text
-JUnit 5
-Mockito
-AssertJ
-```
-
-Focus:
-
-```text
-Application service business rules
-Movement calculations
-Deletion rules
-Validation behavior
-Mapper behavior when useful
-```
-
-Unit tests do not start the Spring context unless necessary.
-
----
-
-## 20.2 Repository Integration Tests
-
-Tools:
-
-```text
-Spring Boot Test
-Testcontainers
-MySQL container
-```
-
-Focus:
-
-```text
-JPA mappings
-Queries
-Constraints
-Indexes when behavior depends on them
-Locking behavior
-```
-
-Tests must use MySQL rather than H2 so the test database behaves like the production database engine.
-
----
-
-## 20.3 API Integration Tests
-
-Tools:
-
-```text
-Spring Boot Test
-Testcontainers
-REST Assured
-```
-
-Focus:
-
-```text
-HTTP contract
-Serialization
-Validation
-Status codes
-ProblemDetail responses
-Transactional behavior
-```
-
----
-
-## 20.4 External Provider Tests
-
-`WarehouseService` tests should mock:
-
-```text
-GeocodingService
-```
-
-They should not call Geoapify over the internet.
-
-Separate adapter tests may verify mapping of representative Geoapify responses using local fixtures or a mocked HTTP server.
-
-CI must not depend on Geoapify availability.
-
----
-
-# 21. Container Architecture
-
-Local execution:
-
-```text
-Docker Compose
-```
-
-Initial services:
-
-```text
-inventory-api
-mysql
-```
-
-Conceptually:
-
-```text
-┌───────────────────┐
-│   Inventory API   │
-│   Spring Boot     │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│      MySQL 8      │
-└───────────────────┘
-
-Inventory API ──────► Geoapify API
-```
-
-The MySQL container will include health checks.
-
-The application should wait for the database to become healthy before startup when managed by Docker Compose.
-
----
-
-# 22. Configuration
-
-Configuration should be environment-based.
-
-Examples:
-
-```text
-DB_HOST
-DB_PORT
-DB_NAME
-DB_USERNAME
-DB_PASSWORD
-
-GEOAPIFY_BASE_URL
-GEOAPIFY_API_KEY
-```
-
-Spring profiles may separate:
-
-```text
-local
-test
-```
-
-Production secrets are never stored in the repository.
-
----
-
-# 23. API Documentation
-
-OpenAPI documentation will be generated using Springdoc OpenAPI.
-
-Development environment:
+Available endpoints:
 
 ```text
 /swagger-ui.html
+/v3/api-docs
+/v3/api-docs.yaml
 ```
 
-The documentation must describe:
+Controllers contain OpenAPI metadata such as:
 
-- Endpoints
-- Request DTOs
-- Response DTOs
-- Validation rules
-- Status codes
-- Error responses
+```text
+@Tag
+@Operation
+@ApiResponse
+@Parameter
+@Schema
+```
 
-The OpenAPI contract should remain consistent with `api-design.md`.
+Reusable error response components keep documented errors consistent.
+
+The generated OpenAPI specification is considered the authoritative machine-readable HTTP contract.
 
 ---
 
-# 24. Observability
+## 20. Actuator Architecture
 
-The API should expose basic operational information through Spring Boot Actuator.
+Spring Boot Actuator provides operational endpoints.
 
-Initial endpoints may include:
+Exposed endpoints:
 
 ```text
 /actuator/health
 /actuator/info
 ```
 
-Sensitive actuator endpoints must not be unnecessarily exposed.
+Only health and info are exposed by the current configuration.
 
-Application logs should include enough context to diagnose failures without logging secrets or API keys.
+The Docker API container health check uses:
+
+```text
+/actuator/health
+```
+
+so container orchestration can determine whether the application is ready.
 
 ---
 
-# 25. CI Architecture
+## 21. Docker Architecture
 
-GitHub Actions will execute the automated quality pipeline.
+The project provides:
 
-Initial workflow:
+```text
+Dockerfile
+compose.yml
+```
+
+### Application image
+
+The Dockerfile is multi-stage.
+
+Build stage:
+
+```text
+Maven + Eclipse Temurin 25
+```
+
+Runtime stage:
+
+```text
+Eclipse Temurin 25 JRE Alpine
+```
+
+The build stage packages the Spring Boot application.
+
+The runtime stage contains only what is required to execute the resulting JAR plus `curl` for health checks.
+
+### Compose environment
+
+Docker Compose starts:
+
+```text
+MySQL 8.4
+Inventory API
+```
+
+MySQL uses a persistent named volume.
+
+The API depends on MySQL becoming healthy before startup.
+
+The application container runs with:
+
+```text
+SPRING_PROFILES_ACTIVE=demo
+```
+
+Therefore the Docker demo does not require Geoapify credentials.
+
+---
+
+## 22. Demo Data Architecture
+
+Flyway owns both schema migration and demo bootstrap behavior.
+
+Versioned migrations create the schema.
+
+The demo profile additionally loads representative data through demo-specific Flyway migration configuration.
+
+The demo dataset makes it possible to inspect:
+
+```text
+categories
+products
+suppliers
+product-supplier relationships
+warehouses
+stocks
+inventory movements
+stock transfers
+```
+
+without manually constructing the complete domain before evaluating the API.
+
+---
+
+## 23. Testing Architecture
+
+The project separates regular tests and integration tests through the Maven lifecycle.
+
+### Regular tests
+
+Files following:
+
+```text
+*Test
+```
+
+run through Maven Surefire.
+
+They include areas such as:
+
+- domain behavior
+- services
+- mappers
+- controller HTTP contracts
+
+### Integration tests
+
+Files following:
+
+```text
+*IT
+```
+
+run through Maven Failsafe during:
+
+```text
+mvn verify
+```
+
+Integration coverage includes:
+
+- repository/JPA behavior
+- MySQL constraints
+- transactional operations
+- complete HTTP API workflows
+- infrastructure endpoints
+
+### Real database testing
+
+Integration tests use:
+
+```text
+Testcontainers + MySQL
+```
+
+rather than replacing MySQL with an in-memory database.
+
+This verifies behavior against the same database engine used by the application.
+
+### API integration testing
+
+REST Assured is used for representative cross-layer HTTP workflows.
+
+The application starts on a random port and requests exercise the real HTTP stack.
+
+---
+
+## 24. Testcontainers Lifecycle
+
+The MySQL Testcontainer is provided through Spring test configuration and imported by integration test base classes.
+
+The container lifecycle is therefore aligned with the Spring ApplicationContext lifecycle.
+
+This avoids cached application contexts retaining datasource connections to a Testcontainer that has already been stopped.
+
+The integration test architecture favors one compatible shared Spring-managed MySQL container lifecycle across the suite.
+
+---
+
+## 25. Database Test Isolation
+
+API-level integration tests do not rely on test transaction rollback because HTTP requests are executed by the running server in separate transactions.
+
+Instead, database state is explicitly cleaned between API integration tests.
+
+Repository integration tests may use transactional rollback where appropriate.
+
+This distinction keeps test isolation aligned with the actual execution model.
+
+---
+
+## 26. Coverage Architecture
+
+JaCoCo collects coverage separately for:
+
+```text
+regular tests
+integration tests
+```
+
+The generated execution data is merged into:
+
+```text
+target/jacoco.exec
+```
+
+The HTML report is generated at:
+
+```text
+target/site/jacoco/
+```
+
+The build enforces project-wide minimum coverage of:
+
+```text
+90% lines
+80% branches
+```
+
+If either minimum is not met:
+
+```text
+mvn verify
+```
+
+fails.
+
+Coverage is used as a quality guard, not as a substitute for meaningful test assertions.
+
+---
+
+## 27. Maven Verification Lifecycle
+
+The project distinguishes:
+
+```text
+mvn test
+```
+
+from:
+
+```text
+mvn verify
+```
+
+`mvn test` runs the regular Surefire suite.
+
+`mvn verify` performs the complete verification lifecycle:
+
+```text
+regular tests
+      ↓
+integration tests
+      ↓
+Testcontainers / MySQL
+      ↓
+JaCoCo merge
+      ↓
+JaCoCo report
+      ↓
+coverage threshold check
+```
+
+For complete local or CI validation, `verify` is the authoritative build command.
+
+---
+
+## 28. Continuous Integration
+
+GitHub Actions runs CI on:
+
+```text
+pull requests -> main
+pushes -> main
+```
+
+The workflow:
 
 ```text
 Checkout
    ↓
-Set up Java
+Set up Eclipse Temurin Java 25
    ↓
-Build
+Restore/cache Maven dependencies
    ↓
-Run tests
+mvn --batch-mode verify
    ↓
-Generate coverage report
+Upload JaCoCo HTML artifact
 ```
 
-Testcontainers will start MySQL automatically during integration tests.
+The workflow runs on Ubuntu and therefore validates the repository independently from the developer's local IntelliJ environment.
 
-The CI environment must not require a locally installed MySQL server.
+A change is considered technically validated only when the complete Maven verification lifecycle succeeds in CI.
 
 ---
 
-# 26. Coverage
+## 29. Architectural Dependency Summary
 
-JaCoCo will generate test coverage reports.
-
-Coverage is used as a quality signal, not as a target to maximize artificially.
-
-Business-critical paths should receive priority:
+The core dependency direction can be summarized as:
 
 ```text
-Stock movement rules
-Insufficient stock
-Automatic stock creation
-Deletion restrictions
-Address validation behavior
-Unique business identifiers
+Controller
+    │
+    ▼
+Service Interface
+    │
+    ▼
+Service Implementation
+    │
+    ├────────► Domain Model
+    ├────────► Repository
+    └────────► Application Abstraction
+                     │
+                     ▼
+              Integration Adapter
 ```
 
----
-
-# 27. Main Components
-
-## Controllers
+Database infrastructure sits behind repositories:
 
 ```text
-ProductController
-CategoryController
-SupplierController
-ProductSupplierController
-WarehouseController
-StockController
-StockMovementController
-```
-
-## Service Interfaces
-
-```text
-ProductService
-CategoryService
-SupplierService
-ProductSupplierService
-WarehouseService
-StockQueryService
-InventoryService
-GeocodingService
-```
-
-## Service Implementations
-
-```text
-ProductServiceImpl
-CategoryServiceImpl
-SupplierServiceImpl
-ProductSupplierServiceImpl
-WarehouseServiceImpl
-StockQueryServiceImpl
-InventoryServiceImpl
-GeoapifyGeocodingService
-```
-
-## Repositories
-
-```text
-ProductRepository
-CategoryRepository
-SupplierRepository
-ProductSupplierRepository
-WarehouseRepository
-StockRepository
-StockMovementRepository
-```
-
-## Domain
-
-```text
-Product
-Category
-Supplier
-ProductSupplier
-Warehouse
-Address
-Stock
-StockMovement
-MovementType
-```
-
-## Cross-Cutting Components
-
-```text
-GlobalExceptionHandler
-OpenApiConfig
-GeoapifyConfig
-```
-
----
-
-# 28. Architecture Diagram
-
-A visual architecture diagram should be stored in:
-
-```text
-docs/diagrams/application-architecture.drawio
-docs/diagrams/application-architecture.svg
-```
-
-Recommended elements for the draw.io diagram:
-
-```text
-Client
-
-ProductController
-CategoryController
-SupplierController
-WarehouseController
-StockController
-StockMovementController
-
-ProductService
-CategoryService
-SupplierService
-WarehouseService
-StockQueryService
-InventoryService
-
-Repositories
-
+Repository
+    │
+    ▼
+Spring Data JPA
+    │
+    ▼
+Hibernate
+    │
+    ▼
 MySQL
-
-GeocodingService
-GeoapifyGeocodingService
-Geoapify API
 ```
 
-Recommended dependency direction:
+External address infrastructure sits behind:
 
 ```text
-Client
-  ↓
-Controllers
-  ↓
-Service Interfaces
-  ↓
-Service Implementations
-  ↓
-Repositories
-  ↓
-MySQL
-
-WarehouseServiceImpl
-  ↓
-GeocodingService
-  △
-  │ implements
-GeoapifyGeocodingService
-  ↓
-Geoapify API
+AddressValidator
 ```
 
-This diagram should represent software dependencies, not domain cardinalities. Domain relationships remain documented in `inventory-domain.drawio`.
+which has different implementations by profile.
 
 ---
 
-# 29. Key Architecture Decisions
+## 30. Final Architecture Decisions
 
-## ADR-001 — Modular Monolith
+The following architectural decisions define version 1:
 
-Version 1 is implemented as a modular monolith.
-
-Reason:
-
-- Simple deployment
-- Clear module boundaries
-- No current requirement for independent scaling
-- Avoids unnecessary distributed-system complexity
-
----
-
-## ADR-002 — Package by Feature
-
-Code is grouped primarily by business feature.
-
-Reason:
-
-- Better cohesion
-- Easier navigation
-- Features remain easier to extract or evolve later
-
----
-
-## ADR-003 — DTOs Separate from Entities
-
-JPA entities are never exposed directly through the API.
-
-Reason:
-
-- Protect persistence boundaries
-- Avoid accidental serialization
-- Allow independent API evolution
-
----
-
-## ADR-004 — MySQL + Flyway
-
-MySQL is the persistence engine and Flyway owns schema migrations.
-
-Reason:
-
-- Explicit, version-controlled database evolution
-- Reproducible environments
-- Production-style schema management
-
----
-
-## ADR-005 — Address as Value Object
-
-`Address` is embedded in `Warehouse`.
-
-Reason:
-
-- Address has no identity independent from the warehouse
-- Its meaning is defined by its values
-- Its lifecycle belongs to the warehouse
-
----
-
-## ADR-006 — External Geocoding Behind Interface
-
-Geoapify is accessed through `GeocodingService`.
-
-Reason:
-
-- Dependency Inversion
-- Provider replaceability
-- Easier automated testing
-- No Geoapify DTO leakage into the domain/application layers
-
----
-
-## ADR-007 — Stock Changes Only Through Movements
-
-Direct stock quantity updates are forbidden.
-
-Reason:
-
-- Auditability
-- Business-rule centralization
-- Historical traceability
-
----
-
-## ADR-008 — Transactional Inventory Operations
-
-Stock updates and movement persistence share one database transaction.
-
-Reason:
-
-- Prevent inconsistent stock and history
-
----
-
-## ADR-009 — Pessimistic Locking for Stock Mutation
-
-Stock records used by outbound/inbound concurrent operations are loaded with write locking.
-
-Reason:
-
-- Prevent lost updates
-- Prevent concurrent operations from producing negative stock
-
----
-
-## ADR-010 — Manual Mapping in Version 1
-
-DTO/entity mapping begins with explicit Java mappers.
-
-Reason:
-
-- Keeps behavior visible
-- Reinforces Java fundamentals
-- Avoids introducing another abstraction before it is needed
-
----
-
-# 30. Out of Scope Architectural Concerns
-
-Version 1 intentionally excludes:
-
-```text
-Spring Security
-JWT
-OAuth2
-Redis
-Kafka
-RabbitMQ
-Microservices
-Distributed tracing
-Kubernetes
-Multi-tenancy
-CQRS
-Event sourcing
-```
-
-These topics are better demonstrated in later portfolio projects where they solve an actual architectural need.
+1. The application is a modular monolith.
+2. The root package is `com.burgosfacundo.inventory`.
+3. Source code is organized by feature rather than by one global technical layer.
+4. Feature packages internally separate controller, DTO, model, mapper, repository and service responsibilities.
+5. Controllers remain thin and delegate use cases to services.
+6. Persistence entities are never exposed directly through the HTTP API.
+7. Mapping is explicit and manual.
+8. Spring Data JPA repositories isolate persistence access.
+9. Flyway owns schema evolution.
+10. Hibernate uses `ddl-auto=validate`.
+11. Open Session in View is disabled.
+12. Application REST endpoints receive the global `/api/v1` prefix through `WebConfig`.
+13. Springdoc and Actuator infrastructure endpoints remain outside `/api/v1`.
+14. Stock quantity is modified only through inventory movement and transfer use cases.
+15. Inventory movements use `IN` and `OUT`.
+16. Inventory movement creation and stock modification are transactional.
+17. Stock transfers are first-class historical entities.
+18. Transfers modify both warehouse stocks and create matching `OUT`/`IN` movements in one transaction.
+19. Pessimistic database locking protects stock-changing operations.
+20. Stock transfers acquire locks in deterministic warehouse-id order.
+21. Database constraints remain the authoritative integrity layer.
+22. Warehouse addresses are embedded Value Objects.
+23. Warehouse services depend on the `AddressValidator` abstraction.
+24. Geoapify is the normal external address-validation adapter.
+25. The `demo` profile replaces Geoapify with a local offline adapter.
+26. Errors are centralized through `GlobalExceptionHandler` and Spring `ProblemDetail`.
+27. OpenAPI/Swagger documents the implemented HTTP contract.
+28. Actuator exposes health and application information.
+29. Docker Compose provides a zero-configuration portfolio demo with MySQL.
+30. Integration tests use a real MySQL Testcontainer.
+31. Maven Failsafe runs `*IT` integration tests during `verify`.
+32. JaCoCo merges regular and integration test coverage.
+33. GitHub Actions executes the complete `mvn verify` lifecycle.
+34. Authentication, distributed messaging, Redis, multi-tenancy and microservices remain outside version 1.
